@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}German Learning News{% endblock %}</title>
+    <!-- Only one Bootstrap and Font Awesome include each -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/dictionary.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 3px solid #667eea;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        nav {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background 0.3s;
+            font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .vocab-word {
+            background: #fffacd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .vocab-word:hover {
+            background: #ffd700;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .difficulty-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .difficulty-beginner { background: #28a745; color: white; }
+        .difficulty-intermediate { background: #ffc107; color: black; }
+        .difficulty-advanced { background: #dc3545; color: white; }
+
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .language-selector select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .language-selector select:hover {
+            border-color: #764ba2;
+        }
+
+        .custom-alert-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 80%;
+        }
+
+        .custom-alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: alertFadeInOut 5s forwards;
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+        .custom-alert.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .custom-alert.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .custom-alert.warning {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            color: #856404;
+        }
+
+        .custom-alert.info {
+            background-color: #cce5ff;
+            border-color: #b8daff;
+            color: #004085;
+        }
+
+        @keyframes alertFadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        .spa-tab-content { display: none; }
+        .spa-tab-content.active { display: block; }
+        .tab-btn.active { background: #667eea; color: #fff; }
+        .tab-btn { background: #f8f9fa; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1.1em; transition: background 0.2s; }
+        .tab-btn:not(.active):hover { background: #e0e7ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-selector">
+            <select id="targetLang" onchange="changeTargetLanguage()">
+                <option value="en">🇺🇸 English</option>
+                <option value="vi">🇻🇳 Vietnamese</option>
+            </select>
+        </div>
+        <header>
+            <h1>🇩🇪 German Learning App</h1>
+            <p class="subtitle">Learn German through current events</p>
+            {% if session.get('user_id') %}
+                <div class="auth-section">
+                    <span class="welcome-text">Welcome, {{ session.get('user_email', 'User') }}!</span>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                </div>
+            {% else %}
+                <div class="auth-section">
+                    <a href="/login" class="btn btn-outline-primary btn-sm">Login</a>
+                    <a href="/register" class="btn btn-primary btn-sm">Register</a>
+                </div>
+            {% endif %}
+        </header>
+        <!-- SPA Tab Content Containers -->
+         <nav>
+            <button type="button" class="tab-btn active" data-tab="news-tab" aria-controls="news-tab" aria-selected="true">📰 News</button>
+            <button type="button" class="tab-btn" data-tab="vocabulary-tab" aria-controls="vocabulary-tab" aria-selected="false">📚 Vocabulary</button>
+            <button type="button" class="tab-btn" data-tab="dictionary-tab" aria-controls="dictionary-tab" aria-selected="false">📖 Dictionary</button>
+            <button type="button" class="tab-btn" data-tab="folders-tab" aria-controls="folders-tab" aria-selected="false">📂 VocabVault</button>
+            </nav>
+
+    </div>
+    <script>
+    // SPA Tab System with AJAX loading
+    const tabRoutes = {
+        'news-tab': '/',
+        'vocabulary-tab': '/vocabulary',
+        'dictionary-tab': '/dictionary',
+        'folders-tab': '/folders'
+    };
+    function loadTabContent(tabId) {
+        const url = tabRoutes[tabId];
+        if (!url) return;
+        const tabDiv = document.getElementById(tabId);
+        tabDiv.innerHTML = '<div style="text-align:center;padding:2em;">Loading...</div>';
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+                tabDiv.innerHTML = html;
+            })
+            .catch(() => {
+                tabDiv.innerHTML = '<div style="color:red;text-align:center;">Failed to load content.</div>';
+            });
+    }
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.spa-tab-content').forEach(tab => tab.classList.remove('active'));
+            this.classList.add('active');
+            const tabId = this.dataset.tab;
+            document.getElementById(tabId).classList.add('active');
+            loadTabContent(tabId);
+        });
+    });
+    // Load initial tab content
+    loadTabContent('news-tab');
+    </script>
+    <!-- <script src="{{ url_for('static', filename='js/app.js') }}"></script> -->
+    <script>
+        let currentLang = 'en';  // Default language
+
+        function changeTargetLanguage() {
+            currentLang = document.getElementById('targetLang').value;
+            // Store the language preference
+            localStorage.setItem('preferredLanguage', currentLang);
+            // Update any visible translations on the page
+            updateVisibleTranslations();
+        }
+
+        // Add click handlers for vocabulary words
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved language preference
+            const savedLang = localStorage.getItem('preferredLanguage');
+            if (savedLang) {
+                currentLang = savedLang;
+                document.getElementById('targetLang').value = currentLang;
+            }
+
+            const vocabWords = document.querySelectorAll('.vocab-word');
+            vocabWords.forEach(word => {
+                word.addEventListener('click', function() {
+                    const germanWord = this.getAttribute('data-word');
+                    fetch(`/api/translate?word=${encodeURIComponent(germanWord)}&dest_lang=${currentLang}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert('Translation failed. Please try again.');
+                            } else {
+                                alert(`${data.word} = ${data.translation}`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Translation error:', error);
+                            alert('Translation failed. Please try again.');
+                        });
+                });
+            });
+        });
+
+        function updateVisibleTranslations() {
+            // This function will be called when language changes
+            // You can add specific translation updates here if needed
+            const vocabWords = document.querySelectorAll('.vocab-word[data-translated="true"]');
+            vocabWords.forEach(word => {
+                const germanWord = word.getAttribute('data-word');
+                fetch(`/api/translate?word=${encodeURIComponent(germanWord)}&dest_lang=${currentLang}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.error && data.translation) {
+                            const tooltips = word.querySelectorAll('.tooltiptext');
+                            tooltips.forEach(tooltip => {
+                                tooltip.textContent = data.translation;
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Translation update error:', error));
+            });
+        }
+
+        // Create alert container if it doesn't exist
+        function getAlertContainer() {
+            let container = document.querySelector('.custom-alert-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'custom-alert-container';
+                document.body.appendChild(container);
+            }
+            return container;
+        }
+
+        // Show custom alert
+        function showCustomAlert(messageKey, type = 'info') {
+            const container = getAlertContainer();
+            const alert = document.createElement('div');
+            alert.className = `custom-alert ${type}`;
+            
+            // Get translated message
+            const message = getTranslation(messageKey);
+            
+            // Add icon based on type
+            let icon = '💡'; // default info icon
+            if (type === 'success') icon = '✅';
+            if (type === 'error') icon = '❌';
+            if (type === 'warning') icon = '⚠️';
+            
+            alert.innerHTML = `
+                <div class="alert-content">
+                    <span class="alert-icon">${icon}</span>
+                    <span class="alert-message">${message}</span>
+                </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            
+            container.appendChild(alert);
+            
+            // Remove alert after animation
+            setTimeout(() => {
+                if (alert.parentElement) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Function to show word exists alert
+        function showWordExistsAlert() {
+            showCustomAlert('alert_word_exists', 'warning');
+        }
+
+        // Function to show folder exists alert
+        function showFolderExistsAlert() {
+            showCustomAlert('alert_folder_exists', 'warning');
+        }
+
+        // Function to show success alert
+        function showSuccessAlert(messageKey) {
+            showCustomAlert(messageKey, 'success');
+        }
+
+        // Function to show error alert
+        function showErrorAlert(messageKey) {
+            showCustomAlert(messageKey, 'error');
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,649 @@
+/* Custom styles for vocabulary learning app */
+
+:root {
+    --bs-primary-rgb: 13, 110, 253;
+    --bs-secondary-rgb: 108, 117, 125;
+    --bs-success-rgb: 25, 135, 84;
+    --bs-info-rgb: 13, 202, 240;
+    --bs-warning-rgb: 255, 193, 7;
+    --bs-danger-rgb: 220, 53, 69;
+    --vocab-bg: #ffffff;
+    --vocab-border: #e2e8f0;
+    --vocab-text: #2d3748;
+    --vocab-label: #718096;
+    --vocab-input-bg: #f7fafc;
+    --vocab-input-border: #cbd5e0;
+    --vocab-hover: #f1f5f9;
+}
+
+/* Vocabulary List Styles */
+.vocabulary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.vocabulary-item {
+    background: var(--vocab-bg);
+    border: 1px solid var(--vocab-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.vocabulary-item:hover {
+    background: var(--vocab-hover);
+    transform: translateY(-1px);
+}
+
+.vocabulary-number {
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.875rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.vocabulary-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.vocabulary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.vocabulary-term,
+.vocabulary-definition {
+    min-width: 0;
+}
+
+.term-input,
+.definition-input {
+    width: 100%;
+    border: 1px solid var(--vocab-input-border);
+    background: var(--vocab-input-bg);
+    color: var(--vocab-text);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    font-family: inherit;
+    resize: none;
+    transition: all 0.2s ease;
+}
+
+.term-input {
+    font-size: 1.1rem;
+    height: 2.5rem;
+}
+
+.definition-input {
+    font-size: 0.95rem;
+    height: 2.5rem;
+    resize: none;
+}
+
+.term-input:focus,
+.definition-input:focus {
+    outline: none;
+    border-color: var(--bs-primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.term-input[readonly],
+.definition-input[readonly] {
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.term-input[readonly]:hover,
+.definition-input[readonly]:hover {
+    background: var(--vocab-input-bg);
+    border-color: var(--vocab-input-border);
+}
+
+.term-label,
+.definition-label {
+    color: var(--vocab-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vocabulary-media {
+    flex-shrink: 0;
+}
+
+.media-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Image Upload Styles */
+.image-upload-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.image-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--vocab-input-bg);
+    border: 2px dashed var(--vocab-border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--vocab-label);
+    font-size: 0.75rem;
+    gap: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.image-placeholder:hover {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+.image-placeholder i {
+    font-size: 1.2rem;
+}
+
+.upload-image-btn {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    background: white;
+    border: 1px solid var(--vocab-border);
+}
+
+/* Audio Upload Styles */
+.audio-upload-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+    max-width: 120px;
+}
+
+.audio-url-input {
+    display: none;
+    width: 100%;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--vocab-input-border);
+    border-radius: 4px;
+    background: var(--vocab-input-bg);
+    color: var(--vocab-text);
+    text-align: center;
+}
+
+.audio-url-input:focus {
+    outline: none;
+    border-color: var(--bs-primary);
+    background: #ffffff;
+}
+
+.audio-url-input[readonly] {
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.audio-url-input[readonly]:hover {
+    background: var(--vocab-input-bg);
+    border-color: var(--vocab-input-border);
+}
+
+.audio-buttons {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.audio-buttons .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.vocabulary-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 1rem;
+    flex-shrink: 0;
+}
+
+.action-btn {
+    background: transparent;
+    border: 1px solid var(--vocab-border);
+    color: var(--vocab-label);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: var(--vocab-border);
+    color: var(--vocab-text);
+}
+
+/* Folder Header Styles */
+.folder-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.header-info {
+    flex: 1;
+}
+
+.folder-title {
+    color: #2d3748;
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.folder-description {
+    color: #718096;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.folder-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.stat-badge {
+    background: #ebf5ff;
+    color: #3182ce;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+.search-input {
+    background: #d7d7d7;
+    border: 1px solid var(--vocab-border);
+    color: var(--vocab-text);
+    padding-right: 3rem;
+    border-radius: 8px;
+}
+
+.search-input:focus {
+    background: #d7d7d7;
+    border-color: var(--bs-primary);
+    color: var(--vocab-text);
+}
+
+.search-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--vocab-label);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-top: 1px solid var(--vocab-border);
+    padding-top: 1rem;
+}
+
+.filter-tab {
+    background: transparent;
+    border: none;
+    color: var(--vocab-label);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.filter-tab.active,
+.filter-tab:hover {
+    background: var(--bs-primary);
+    color: white;
+}
+
+/* Responsive adjustments for vocabulary list */
+@media (max-width: 768px) {
+    .vocabulary-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .vocabulary-image {
+        justify-self: start;
+    }
+    
+    .vocabulary-actions {
+        margin-left: 0;
+        margin-top: 1rem;
+    }
+    
+    .vocabulary-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .vocabulary-number {
+        align-self: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        align-items: stretch;
+        width: 100%;
+    }
+    
+    .search-container {
+        width: 100%;
+    }
+    
+    .action-buttons {
+        justify-content: stretch;
+    }
+    
+    .action-buttons .btn {
+        flex: 1;
+    }
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Progress bar animations */
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+/* Button loading states */
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Game question animations */
+#quizQuestion, #mcQuestion {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#quizResult, #mcResult {
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Multiple choice buttons */
+#mcChoices .btn {
+    margin-bottom: 0.5rem;
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word;
+    padding: 1rem;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+/* Audio button styling */
+.play-audio {
+    transition: all 0.2s ease;
+}
+
+.play-audio:hover {
+    transform: scale(1.05);
+}
+
+/* Breadcrumb styling */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--bs-light);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--bs-primary);
+}
+
+/* Vocabulary cards */
+.vocabulary-card {
+    border-left: 4px solid var(--bs-primary);
+}
+
+/* Game selection cards */
+.game-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.game-card:hover {
+    border-color: var(--bs-primary);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    #mcChoices .btn {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+        min-height: 50px;
+    }
+}
+
+
+/* Light theme enhancements */
+body {
+    background-color: #f8fafc !important;
+}
+
+.navbar-dark {
+    background-color: #1e293b !important;
+}
+
+.navbar-brand {
+    color: var(--bs-light) !important;
+}
+
+.alert {
+    border: none;
+}
+
+
+
+
+
+/* Score display */
+.score-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--bs-primary);
+}
+
+/* Word exists alert */
+#wordExistsAlert {
+    animation: shake 0.5s ease-in-out
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+    box-sizing: border-box;
+}
+
+.btn, .card, .form-control, .form-select {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Focus states */
+.form-control:focus, .form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bs-gray-800);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bs-gray-600);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-gray-500);
+}
