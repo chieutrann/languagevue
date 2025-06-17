@@ -35,11 +35,13 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useTranslation } from './composables/useTranslation'
 import NavigationTabs from './components/NavigationTabs.vue'
 import LanguageSelector from './components/LanguageSelector.vue'
 import AlertBox from './components/AlertBox.vue'
 
 const authStore = useAuthStore()
+const { t } = useTranslation()
 
 const logout = async () => {
   await authStore.logout()

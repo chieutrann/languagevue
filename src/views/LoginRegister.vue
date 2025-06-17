@@ -12,7 +12,7 @@
                   @click="activeTab = 'login'"
                   type="button"
                 >
-                  <i class="fas fa-sign-in-alt me-2"></i>Login
+                  <i class="fas fa-sign-in-alt me-2"></i>{{ t('auth.login') }}
                 </button>
               </li>
               <li class="nav-item" role="presentation">
@@ -22,7 +22,7 @@
                   @click="activeTab = 'register'"
                   type="button"
                 >
-                  <i class="fas fa-user-plus me-2"></i>Register
+                  <i class="fas fa-user-plus me-2"></i>{{ t('auth.register') }}
                 </button>
               </li>
             </ul>
@@ -31,10 +31,10 @@
           <div class="card-body">
             <!-- Login Form -->
             <div v-show="activeTab === 'login'" class="tab-pane">
-              <h4 class="mb-4">Welcome Back</h4>
+              <h4 class="mb-4">{{ t('auth.welcomeBack') }}</h4>
               <form @submit.prevent="handleLogin">
                 <div class="mb-3">
-                  <label for="loginEmail" class="form-label">Email address</label>
+                  <label for="loginEmail" class="form-label">{{ t('auth.email') }}</label>
                   <input 
                     type="email" 
                     class="form-control" 
@@ -167,10 +167,12 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useAppStore } from '../stores/app'
+import { useTranslation } from '../composables/useTranslation'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const { t } = useTranslation()
 
 const activeTab = ref('login')
 const loginLoading = ref(false)

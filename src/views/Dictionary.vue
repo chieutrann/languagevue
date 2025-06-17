@@ -2,8 +2,8 @@
   <div class="dictionary-section">
     <div class="function-box lookup-box mb-4">
       <div class="box-header">
-        <h3>🔍 German Dictionary Search</h3>
-        <p>Get comprehensive word data from Digital Dictionary of German</p>
+        <h3>{{ t('dictionary.title') }}</h3>
+        <p>{{ t('dictionary.description') }}</p>
       </div>
       <div class="function-content">
         <div class="search-box">
@@ -245,11 +245,13 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useAppStore } from '../stores/app'
+import { useTranslation } from '../composables/useTranslation'
 import { api } from '../utils/api'
 import AutocompleteInput from '../components/AutocompleteInput.vue'
 import GermanCharacterHelper from '../components/GermanCharacterHelper.vue'
 
 const appStore = useAppStore()
+const { t } = useTranslation()
 
 // Search functionality
 const searchQuery = ref('')
