@@ -8,7 +8,7 @@
         class="nav-tab"
         :class="{ active: $route.name === tab.name }"
       >
-        {{ tab.label }}
+        {{ t(tab.labelKey) }}
       </router-link>
     </div>
   </nav>
@@ -17,14 +17,16 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useTranslation } from '../composables/useTranslation'
 
 const route = useRoute()
+const { t } = useTranslation()
 
 const tabs = [
-  { name: 'Home', path: '/', label: '📰 News' },
-  { name: 'Vocabulary', path: '/vocabulary', label: '📚 Vocabulary' },
-  { name: 'Dictionary', path: '/dictionary', label: '📖 Dictionary' },
-  { name: 'Folders', path: '/folders', label: '📂 VocabVault' }
+  { name: 'Home', path: '/', labelKey: 'nav.news' },
+  { name: 'Vocabulary', path: '/vocabulary', labelKey: 'nav.vocabulary' },
+  { name: 'Dictionary', path: '/dictionary', labelKey: 'nav.dictionary' },
+  { name: 'Folders', path: '/folders', labelKey: 'nav.folders' }
 ]
 </script>
 

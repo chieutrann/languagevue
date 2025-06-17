@@ -12,12 +12,12 @@
         </p>
         
         <div class="auth-section mt-3" v-if="authStore.isAuthenticated">
-          <span class="welcome-text me-3">Welcome, {{ authStore.user?.email || 'User' }}!</span>
-          <button @click="logout" class="btn btn-outline-danger btn-sm">Logout</button>
+          <span class="welcome-text me-3">{{ t('auth.welcome') }}, {{ authStore.user?.email || 'User' }}!</span>
+          <button @click="logout" class="btn btn-outline-danger btn-sm">{{ t('auth.logout') }}</button>
         </div>
         <div class="auth-section mt-3" v-else>
-          <router-link to="/auth" class="btn btn-outline-primary btn-sm me-2">Login</router-link>
-          <router-link to="/auth" class="btn btn-primary btn-sm">Register</router-link>
+          <router-link to="/auth" class="btn btn-outline-primary btn-sm me-2">{{ t('auth.login') }}</router-link>
+          <router-link to="/auth" class="btn btn-primary btn-sm">{{ t('auth.register') }}</router-link>
         </div>
       </header>
 
