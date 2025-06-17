@@ -1,0 +1,24 @@
+
+[
+    {
+        "title": "Neue Technologie in Deutschland",
+        "content": "Deutschland entwickelt neue Technologie für erneuerbare Energien. Die Regierung investiert viel Geld in diese wichtige Zukunft. Experten sagen, dass diese Technologie sehr gut für die Umwelt ist.",
+        "date": "2024-01-15",
+        "difficulty": "beginner",
+        "category": "technology"
+    },
+    {
+        "title": "Wetter heute in Berlin",
+        "content": "Das Wetter in Berlin ist heute sehr schön. Die Sonne scheint und es ist warm. Viele Menschen gehen in den Park. Kinder spielen und Erwachsene lesen Bücher.",
+        "date": "2024-01-14",
+        "difficulty": "beginner",
+        "category": "weather"
+    },
+    {
+        "title": "Deutsches Essen wird immer beliebter",
+        "content": "Deutsche Küche wird international immer populärer. Restaurants in New York und London servieren jetzt Sauerbraten und Spätzle. Touristen kommen nach Deutschland, um authentisches Essen zu probieren.",
+        "date": "2024-01-13",
+        "difficulty": "intermediate",
+        "category": "culture"
+    }
+]

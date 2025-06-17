@@ -246,9 +246,10 @@
 import { ref, reactive } from 'vue'
 import { useAppStore } from '../stores/app'
 import { useTranslation } from '../composables/useTranslation'
-import { api } from '../utils/api'
+import { api, getWord } from '../utils/api'
 import AutocompleteInput from '../components/AutocompleteInput.vue'
 import GermanCharacterHelper from '../components/GermanCharacterHelper.vue'
+import qs from 'qs'
 
 const appStore = useAppStore()
 const { t } = useTranslation()
@@ -295,18 +296,27 @@ const lookupWord = async () => {
     appStore.showAlert('Please enter a word to search', 'warning')
     return
   }
-  
+
   loading.value = true
-  
+
   try {
-    const response = await api.get(`/api/dictionary/lookup?word=${encodeURIComponent(searchQuery.value)}`)
-    searchResults.value = response.data
+    // Call backend, which uses get_word to fetch and return the word info
+    const data = await getWord(searchQuery.value)
+    if (data.error) {
+      appStore.showAlert(data.error, 'error')
+      searchResults.value = null
+    } else {
+      searchResults.value = data
+    }
   } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to lookup word', 'error')
+    appStore.showAlert('Failed to lookup word', 'error')
+    searchResults.value = null
   } finally {
     loading.value = false
   }
 }
+
+
 
 const getConjugation = async () => {
   if (!conjugationQuery.value.trim()) return

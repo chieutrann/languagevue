@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000',
+  baseURL: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -39,5 +39,22 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+//Get word function from dictionary
+export const getWord = async (word) => {
+  try {
+    const response = await api.post('/lookup', { word })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching word:', error)
+    throw error
+  }
+}
+
+
+
+
+// Export the configured axios instance 
+
 
 export { api }
