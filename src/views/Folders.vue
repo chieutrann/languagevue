@@ -1,9 +1,9 @@
 <template>
   <div class="folders-section">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>📂 VocabVault</h2>
+      <h2>{{ t('folders.title') }}</h2>
       <button @click="showCreateForm = true" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>Create New Folder
+        <i class="fas fa-plus me-2"></i>{{ t('folders.createNew') }}
       </button>
     </div>
 
@@ -250,10 +250,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useAppStore } from '../stores/app'
+import { useTranslation } from '../composables/useTranslation'
 import { api } from '../utils/api'
 import GermanCharacterHelper from '../components/GermanCharacterHelper.vue'
 
 const appStore = useAppStore()
+const { t } = useTranslation()
 
 // Data
 const folders = ref([])

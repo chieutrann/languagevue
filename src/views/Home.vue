@@ -1,12 +1,12 @@
 <template>
   <div class="news-section">
-    <h2 class="mb-4">📰 Latest German News</h2>
+    <h2 class="mb-4">{{ t('news.title') }}</h2>
     
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p class="mt-2">Loading news articles...</p>
+      <p class="mt-2">{{ t('news.loading') }}</p>
     </div>
     
     <div v-else-if="error" class="alert alert-danger">
@@ -51,9 +51,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAppStore } from '../stores/app'
+import { useTranslation } from '../composables/useTranslation'
 import { api } from '../utils/api'
 
 const appStore = useAppStore()
+const { t } = useTranslation()
 const articles = ref([])
 const loading = ref(false)
 const error = ref(null)

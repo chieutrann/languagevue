@@ -10,7 +10,7 @@
           <div class="input-wrapper position-relative">
             <AutocompleteInput
               v-model="searchQuery"
-              placeholder="Enter a German word to search..."
+              :placeholder="t('dictionary.placeholder')"
               :suggestions="suggestions"
               @search="lookupWord"
               @input="fetchSuggestions"
@@ -19,7 +19,7 @@
           </div>
           <button @click="lookupWord" class="btn btn-danger ms-2" :disabled="loading">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-            {{ loading ? 'Searching...' : 'Search Word' }}
+            {{ loading ? t('dictionary.searching') : t('dictionary.searchWord') }}
           </button>
         </div>
       </div>
