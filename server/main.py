@@ -12,7 +12,7 @@ import os
 from bs4 import BeautifulSoup
 from auth import auth_bp, login_required
 from flask_cors import CORS
-
+from deep_translator import GoogleTranslator
 # secret_key = os
 # .environ
 
@@ -90,76 +90,6 @@ def vocabulary():
 @app.route('/dictionary')
 def dictionary_page():
     return render_template('dictionary.html')
-
-
-@app.route('/lookup', methods=['POST'])
-def lookup():
-    word = request.form.get("word")
-    lang_dest = request.form.get("lang_dest", "en")
-    
-    if not word:
-        return jsonify({'error': 'No word provided'}), 400
-    
-    # First check if the word exists in our database
-    existing_word = SearchedWord.query.filter_by(word=word).first()
-    if existing_word:
-        # Get translation for requested language
-        translation = existing_word.get_translation(lang_dest)
-        
-        if translation:
-            # If we have the translation for requested language, update count and return
-            existing_word.search_count += 1
-            db.session.commit()
-            
-            return jsonify({
-                'word': existing_word.word,
-                'word_type': existing_word.word_type,
-                'definition': translation,
-                'audio_url': existing_word.audio_url,
-                'search_count': existing_word.search_count,
-                'cached': True
-            })
-        
-        # If we don't have the translation for requested language, fetch it
-        if not dictionary:
-            return jsonify({'error': 'Dictionary not available'}), 500
-        
-        result = dictionary.get_word(word, lang_dest=lang_dest)
-        if not result.get('error'):
-            # Add new translation to existing word
-            existing_word.set_translation(result['definition'], lang_dest)
-            existing_word.search_count += 1
-            if not existing_word.audio_url:
-                audio_url = dictionary.get_audio_url(word)
-                existing_word.audio_url = audio_url
-                result['audio_url'] = audio_url
-            db.session.commit()
-            
-            result['search_count'] = existing_word.search_count
-            result['cached'] = False
-            return jsonify(result)
-    
-    # If word not in database, fetch everything from dictionary API
-    if not dictionary:
-        return jsonify({'error': 'Dictionary not available'}), 500
-    
-    result = dictionary.get_word(word, lang_dest=lang_dest)
-    
-    # If lookup was successful, also get the audio URL and store everything
-    if not result.get('error'):
-        audio_url = dictionary.get_audio_url(word)
-        result['audio_url'] = audio_url
-        
-        SearchedWord.add_or_update(
-            word=word,
-            word_type=result.get('word_type'),
-            translation=result.get('definition'),
-            audio_url=audio_url,
-            lang=lang_dest
-        )
-        result['cached'] = False
-    
-    return jsonify(result)
 
 
 
@@ -693,7 +623,66 @@ def api_search_audio(word):
     else:
         return jsonify({'error': 'Audio not found'}), 404
 
+@app.route('/api/dictionary/get-word', methods=['POST'])
+def api_get_word():
+    data = request.get_json() or request.form
+    word = data.get("word")
+    lang_dest = data.get("lang_dest", "en")
+    src_lang = data.get("src_lang", "de")
 
+    vietnamese_pattern = r'[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵĂÂĐÊÔƠƯÁÀẢÃẠẤẦẨẪẬẮẰẲẴẶÉÈẺẼẸẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌỐỒỔỖỘỚỜỞỠỢÚÙỦŨỤỨỪỬỮỰÝỲỶỸỴ]'
+    if not word or ' ' in word or re.search(vietnamese_pattern, word):
+        return jsonify({'error': 'Please enter a single word without Vietnamese special characters.'}), 400
+
+    # Check if the word exists in the database
+    existing_word = SearchedWord.query.filter_by(word=word).first()
+    if existing_word:
+        translation = existing_word.get_translation(lang_dest)
+        if translation:
+            existing_word.search_count += 1
+            db.session.commit()
+            return jsonify({
+                'word': existing_word.word,
+                'word_type': existing_word.word_type,
+                'definition': translation,
+                'audio_url': existing_word.audio_url,
+                'search_count': existing_word.search_count,
+                'cached': True
+            })
+        # If translation for this language doesn't exist, fetch and update
+        if not dictionary:
+            return jsonify({'error': 'Dictionary not available'}), 500
+        result = dictionary.get_word(word, src_lang=src_lang, lang_dest=lang_dest)
+        if not result.get('error'):
+            existing_word.set_translation(result['definition'], lang_dest)
+            existing_word.search_count += 1
+            if not existing_word.audio_url:
+                audio_url = dictionary.get_audio_url(word)
+                existing_word.audio_url = audio_url
+                result['audio_url'] = audio_url
+            db.session.commit()
+            result['search_count'] = existing_word.search_count
+            result['cached'] = False
+            return jsonify(result)
+
+    # If word not in database, fetch from dictionary API and store
+    if not dictionary:
+        return jsonify({'error': 'Dictionary not available'}), 500
+
+    result = dictionary.get_word(word, src_lang=src_lang, lang_dest=lang_dest)
+    if not result.get('error'):
+        audio_url = dictionary.get_audio_url(word)
+        result['audio_url'] = audio_url
+        SearchedWord.add_or_update(
+            word=word,
+            word_type=result.get('word_type'),
+            translation=result.get('definition'),
+            audio_url=audio_url,
+            lang=lang_dest
+        )
+        result['cached'] = False
+
+    return jsonify(result)
 
 # Set secret key for session management
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')

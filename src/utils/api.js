@@ -41,9 +41,9 @@ api.interceptors.response.use(
 )
 
 //Get word function from dictionary
-export const getWord = async (word) => {
+export const getWord = async (word, src_lang = 'de', lang_dest = 'en') => {
   try {
-    const response = await api.post('/lookup', { word })
+    const response = await api.post('/dictionary/get-word', { word, src_lang, lang_dest })
     return response.data
   } catch (error) {
     console.error('Error fetching word:', error)

@@ -239,6 +239,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Lookup Result Display -->
+    <div id="lookup-results" class="lookup-results mt-4"></div>
   </div>
 </template>
 
@@ -291,6 +294,33 @@ const fetchSuggestions = async (query) => {
   }
 }
 
+function displayLookupResult(data, word, lookupDivId = 'lookup-results') {
+  const lookupDiv = document.getElementById(lookupDivId)
+  if (!lookupDiv) return
+
+  if (data.error) {
+    lookupDiv.innerHTML = `<div class="no-results">No results found for <strong>${word}</strong>.</div>`
+    return
+  }
+
+  let html = `
+    <div class="word-info-box">
+      <div class="box-header-result">
+        Result Lookup
+        ${data.cached ? '<span class="cache-badge" title="Result from cache">⚡</span>' : ''}
+      </div>
+      <div class="word-title">
+        🇩🇪 ${word}
+        ${data.article ? `<span class="article-badge">${data.article}</span>` : ''}
+        ${data.word_type ? `<span class="type-badge">${data.word_type}</span>` : ''}
+        ${data.audio_url ? `<button onclick=\"playWordAudio('${word}')\" class=\"audio-btn\" title=\"Listen to pronunciation\">🔊</button>` : ''}
+      </div>
+      <div class="word-translation">${data.definition}</div>
+    </div>
+  `;
+  lookupDiv.innerHTML = html;
+}
+
 const lookupWord = async () => {
   if (!searchQuery.value.trim()) {
     appStore.showAlert('Please enter a word to search', 'warning')
@@ -300,8 +330,8 @@ const lookupWord = async () => {
   loading.value = true
 
   try {
-    // Call backend, which uses get_word to fetch and return the word info
     const data = await getWord(searchQuery.value)
+    displayLookupResult(data, searchQuery.value)
     if (data.error) {
       appStore.showAlert(data.error, 'error')
       searchResults.value = null
@@ -316,7 +346,41 @@ const lookupWord = async () => {
   }
 }
 
+function playWordAudio(word) {
+  console.log('Playing audio for word:', word); // Debug log
 
+  // Show loading state on the button
+  const audioBtn = document.querySelector(`button[onclick="playWordAudio('${word}')"]`);
+  if (audioBtn) {
+    audioBtn.innerHTML = '⌛'; // Loading indicator
+    audioBtn.disabled = true;
+  }
+
+  if (!searchResults.value || !searchResults.value.audio_url) {
+    alert('No audio available for this word.');
+    if (audioBtn) {
+      audioBtn.innerHTML = '🔊';
+      audioBtn.disabled = false;
+    }
+    return;
+  }
+  const audio = new Audio(searchResults.value.audio_url);
+  audio.play();
+  audio.onended = () => {
+    if (audioBtn) {
+      audioBtn.innerHTML = '🔊';
+      audioBtn.disabled = false;
+    }
+  };
+  audio.onerror = () => {
+    if (audioBtn) {
+      audioBtn.innerHTML = '🔊';
+      audioBtn.disabled = false;
+    }
+    alert('Failed to play audio.');
+  };
+}
+window.playWordAudio = playWordAudio;
 
 const getConjugation = async () => {
   if (!conjugationQuery.value.trim()) return
@@ -477,5 +541,65 @@ const formatTenseName = (tenseKey) => {
   background-color: transparent;
   border-bottom: 2px solid #667eea;
   color: #667eea;
+}
+
+.lookup-results {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+}
+
+.word-info-box {
+  margin-bottom: 15px;
+}
+
+.box-header-result {
+  background: #e9ecef;
+  padding: 10px;
+  border-radius: 8px 8px 0 0;
+  font-weight: 500;
+  position: relative;
+}
+
+.cache-badge {
+  background: #dc3545;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.word-title {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 10px 0;
+}
+
+.article-badge, .type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+
+.audio-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-left: 5px;
+}
+
+.word-translation {
+  font-size: 1.1em;
+  color: #333;
 }
 </style>

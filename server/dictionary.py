@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import random
-import translators as ts
 import urllib.parse
 from data.data_loader import load_vocabulary, save_vocabulary
 from deep_translator import GoogleTranslator
