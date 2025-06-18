@@ -1,140 +1,109 @@
 <template>
-  <div class="dictionary-section">
-    <div class="function-box lookup-box mb-4">
-      <div class="box-header">
-        <h3>{{ t('dictionary.title') }}</h3>
-        <p>{{ t('dictionary.description') }}</p>
-      </div>
-      <div class="function-content">
-        <div class="search-box">
-          <div class="input-wrapper position-relative">
-            <AutocompleteInput
-              v-model="searchQuery"
-              :placeholder="t('dictionary.placeholder')"
-              :suggestions="suggestions"
-              @search="lookupWord"
-              @input="fetchSuggestions"
-            />
-            <GermanCharacterHelper target-input="dictionary-search" />
+  <div class="dictionary-container">
+    <!-- Top Search Bar -->
+    <div class="top-search-bar">
+      <div class="function-box lookup-box">
+        <div class="box-header">
+          <h3>🔍 German Dictionary Search</h3>
+          <p>Get comprehensive word data from Digital Dictionary of German</p>
           </div>
-          <button @click="lookupWord" class="btn btn-danger ms-2" :disabled="loading">
-            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-            {{ loading ? t('dictionary.searching') : t('dictionary.searchWord') }}
-          </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Search Results -->
-    <div v-if="searchResults" class="results-section">
-      <div class="card">
-        <div class="card-header">
-          <h4 class="mb-0">
-            <i class="fas fa-book me-2"></i>
-            Search Results for "{{ searchResults.word }}"
-          </h4>
-        </div>
-        <div class="card-body">
-          <div v-if="searchResults.definitions?.length" class="definitions">
-            <h5>Definitions</h5>
-            <div v-for="(def, index) in searchResults.definitions" :key="index" class="definition-item mb-3">
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <strong>{{ def.word_type }}</strong>
-                  <p class="mb-1">{{ def.definition }}</p>
-                  <small class="text-muted">{{ def.translation }}</small>
+        <div class="function-content">
+          <div class="search-box-group">
+            <div class="search-box">
+              <div class="input-wrapper" style="position:relative;">
+                <input
+                  type="text"
+                  v-model="searchQuery"
+                  id="lookupInput"
+                  placeholder="Enter a German word to search..."
+                  @keydown.enter="lookupWord"
+                  @input="() => { if (suggestionTimeout) clearTimeout(suggestionTimeout); suggestionTimeout = setTimeout(() => fetchSuggestions(searchQuery), 300) }"
+                  autocomplete="off"/>
+                <div class="german-chars">
+                  <button type="button" @click="insertChar('ä')" class="char-btn">ä</button>
+                  <button type="button" @click="insertChar('ö')" class="char-btn">ö</button>
+                  <button type="button" @click="insertChar('ü')" class="char-btn">ü</button>
+                  <button type="button" @click="insertChar('ß')" class="char-btn">ß</button>
+                  <button type="button" @click="toggleSearchDirection" class="direction-btn" title="Toggle search direction">🔄</button>
                 </div>
-                <button 
-                  @click="addToVocabulary(def)" 
-                  class="btn btn-outline-primary btn-sm"
-                  title="Add to vocabulary"
-                >
-                  <i class="fas fa-plus"></i>
-                </button>
+                <div v-if="showSuggestions" class="suggestions-container" id="suggestions">
+                  <div
+                    v-for="suggestion in suggestions"
+                    :key="suggestion.word"
+                    class="suggestion-item"
+                    @click="selectSuggestion(suggestion.word)"
+                  >
+                    <span class="suggestion-word">{{ suggestion.word }}</span>
+                    <span class="suggestion-type">{{ suggestion.type === 'starts_with' ? '🎯' : '🔍' }}</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          <div v-if="searchResults.examples?.length" class="examples mt-4">
-            <h5>Example Sentences</h5>
-            <div v-for="(example, index) in searchResults.examples" :key="index" class="example-item mb-2">
-              <p class="mb-1">{{ example.german }}</p>
-              <small class="text-muted">{{ example.english }}</small>
+              <button class="danger-btn" @click="lookupWord">Search Word</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Additional Features -->
-    <div class="additional-features mt-5">
-      <h3>Additional Features</h3>
-      
-      <!-- Feature Tabs -->
-      <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item">
-          <button 
-            class="nav-link" 
-            :class="{ active: activeFeature === 'conjugation' }"
-            @click="activeFeature = 'conjugation'"
-          >
-            ⚡ Conjugation
-          </button>
-        </li>
-        <li class="nav-item">
-          <button 
-            class="nav-link" 
-            :class="{ active: activeFeature === 'examples' }"
-            @click="activeFeature = 'examples'"
-          >
-            💡 Examples
-          </button>
-        </li>
-        <li class="nav-item">
-          <button 
-            class="nav-link" 
-            :class="{ active: activeFeature === 'browse' }"
-            @click="activeFeature = 'browse'"
-          >
-            📚 Browse
-          </button>
-        </li>
-      </ul>
+    <!-- Dictionary Results Section -->
+    <div id="lookup-results" class="results-section">
+      <div v-if="loading" class="loading-box">
+        <div class="loading-spinner">⏳</div>
+        <div class="loading-message">Loading...</div>
+      </div>
+      <div v-else-if="error" class="error-box">
+        <div class="error-icon">❌</div>
+        <div class="error-message">{{ error }}</div>
+      </div>
+      <div v-else-if="lookupResult" class="word-info-box">
+        <div class="box-header-result">
+          Result Lookup
+          <span v-if="lookupResult.cached" class="cache-badge" title="Result from cache">⚡</span>
+        </div>
+        <div class="word-title">
+          🇩🇪 {{ lookupResult.word }}
+          <span v-if="lookupResult.article" class="article-badge">{{ lookupResult.article }}</span>
+          <span v-if="lookupResult.word_type" class="type-badge">{{ lookupResult.word_type }}</span>
+          <button
+            v-if="lookupResult.audio_url"
+            @click="playWordAudio(lookupResult.word)"
+            class="audio-btn"
+            title="Listen to pronunciation"
+          >🔊</button>
+        </div>
+        <div class="word-translation">{{ lookupResult.definition }}</div>
+      </div>
+    </div>
 
-      <!-- Tab Contents -->
-      <div class="tab-content mt-3">
-        <!-- Conjugation Tab -->
-        <div v-show="activeFeature === 'conjugation'" class="tab-pane">
-          <div class="function-box">
+    <!-- Additional Features Section -->
+    <div class="additional-features">
+      <h3>Additional Features</h3>
+      <div class="function-tabs">
+        <button class="tab-btn" :class="{active: activeTab==='conjugation'}" @click="showTab('conjugation')">⚡ Conjugation</button>
+        <button class="tab-btn" :class="{active: activeTab==='examples'}" @click="showTab('examples')">💡 Examples</button>
+        <button class="tab-btn" :class="{active: activeTab==='browse'}" @click="showTab('browse')">📚 Browse</button>
+      </div>
+      <div class="tab-contents">
+        <div v-show="activeTab==='conjugation'" class="tab-content active">
+          <div class="function-box conjugation-box">
             <div class="box-header">
-              <h4>⚡ Verb Conjugation</h4>
+              <h3>⚡ Verb Conjugation</h3>
               <p>Get complete conjugation forms for any German verb</p>
             </div>
             <div class="function-content">
-              <div class="d-flex gap-2 mb-3">
-                <input 
-                  v-model="conjugationQuery" 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Enter a German verb..."
-                  @keyup.enter="getConjugation"
-                >
-                <button @click="getConjugation" class="btn btn-success" :disabled="conjugationLoading">
-                  {{ conjugationLoading ? 'Loading...' : 'Conjugate' }}
-                </button>
-              </div>
-              
-              <div v-if="conjugationResults" class="conjugation-results">
-                <div class="row">
-                  <div v-for="(tense, tenseKey) in conjugationResults" :key="tenseKey" class="col-md-6 mb-3">
-                    <div class="card">
-                      <div class="card-header">
-                        <h6 class="mb-0">{{ formatTenseName(tenseKey) }}</h6>
-                      </div>
-                      <div class="card-body">
-                        <div v-for="(form, pronoun) in tense" :key="pronoun" class="d-flex justify-content-between">
-                          <span>{{ pronoun }}</span>
-                          <strong>{{ form }}</strong>
+              <button class="success-btn" @click="getConjugation" :disabled="conjugationLoading">Show Conjugation</button>
+              <div v-if="conjugationLoading" class="loading-box">Loading...</div>
+              <div v-if="conjugationResult">
+                <div class="conjugation-result-box">
+                  <div class="box-header-result">Conjugation: {{ searchQuery }}</div>
+                  <div class="conjugation-grid">
+                    <div v-for="(forms, tense) in conjugationResult" :key="tense" class="tense-section">
+                      <div class="tense-title">{{ tense }}</div>
+                      <div class="conjugation-table">
+                        <div v-for="(form, pronoun) in forms" :key="pronoun" class="conjugation-item">
+                          <span class="pronoun">{{ pronoun }}</span>
+                          <span class="form">{{ form }}</span>
                         </div>
                       </div>
                     </div>
@@ -144,34 +113,25 @@
             </div>
           </div>
         </div>
-
-        <!-- Examples Tab -->
-        <div v-show="activeFeature === 'examples'" class="tab-pane">
-          <div class="function-box">
+        <div class="tab-content" :style="activeTab==='examples' ? 'display:block;' : 'display:none;'">
+          <div class="function-box examples-box">
             <div class="box-header">
-              <h4>💡 Word Examples</h4>
+              <h3>💡 Word Examples</h3>
               <p>Get practical examples and usage patterns</p>
             </div>
             <div class="function-content">
-              <div class="d-flex gap-2 mb-3">
-                <input 
-                  v-model="examplesQuery" 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Enter a German word..."
-                  @keyup.enter="getExamples"
-                >
-                <button @click="getExamples" class="btn btn-warning" :disabled="examplesLoading">
-                  {{ examplesLoading ? 'Loading...' : 'Get Examples' }}
-                </button>
-              </div>
-              
-              <div v-if="exampleResults?.length" class="examples-results">
-                <div v-for="(example, index) in exampleResults" :key="index" class="example-card mb-3">
-                  <div class="card">
-                    <div class="card-body">
-                      <p class="mb-2">{{ example.german }}</p>
-                      <small class="text-muted">{{ example.english }}</small>
+              <button class="warning-btn" @click="getExamples" :disabled="examplesLoading">Show Examples</button>
+              <div v-if="examplesLoading" class="loading-box">Loading...</div>
+              <div v-if="exampleResults.length">
+                <div class="examples-result-box">
+                  <div class="box-header-result">Examples: {{ searchQuery }}</div>
+                  <div v-for="section in exampleResults" :key="section.heading || section.german || section.sentence" class="example-section">
+                    <h4 class="example-heading" v-if="section.heading">{{ section.heading }}</h4>
+                    <div class="examples-list">
+                      <div v-for="example in (section.examples || [section])" :key="example.sentence || example.german" class="example">
+                        <div class="german">🇩🇪 {{ example.sentence || example.german }}</div>
+                        <div class="translation">{{ example.translation }}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -179,427 +139,273 @@
             </div>
           </div>
         </div>
-
-        <!-- Browse Tab -->
-        <div v-show="activeFeature === 'browse'" class="tab-pane">
-          <div class="function-box">
+        <div v-show="activeTab==='browse'" class="tab-content">
+          <div class="function-box browse-box">
             <div class="box-header">
-              <h4>📚 Browse Dictionary</h4>
+              <h3>📚 Browse Dictionary</h3>
               <p>Explore words by type, difficulty, or get random selections</p>
             </div>
             <div class="function-content">
-              <div class="row">
-                <div class="col-md-6">
-                  <h5>Word Types</h5>
-                  <div class="d-grid gap-2">
-                    <button @click="browseByType('noun')" class="btn btn-outline-primary">Nouns</button>
-                    <button @click="browseByType('verb')" class="btn btn-outline-success">Verbs</button>
-                    <button @click="browseByType('adjective')" class="btn btn-outline-info">Adjectives</button>
+              <div class="function-grid">
+                <div class="function-category">
+                  <h4>Word Types</h4>
+                  <div class="button-group">
+                    <button class="category-btn noun-btn" @click="browseByType('noun')">Nouns</button>
+                    <button class="category-btn verb-btn" @click="browseByType('verb')">Verbs</button>
+                    <button class="category-btn adj-btn" @click="browseByType('adjective')">Adjectives</button>
                   </div>
                 </div>
-                <div class="col-md-6">
-                  <h5>Difficulty Levels</h5>
-                  <div class="d-grid gap-2">
-                    <button @click="browseByDifficulty('beginner')" class="btn btn-outline-success">Beginner</button>
-                    <button @click="browseByDifficulty('intermediate')" class="btn btn-outline-warning">Intermediate</button>
-                    <button @click="browseByDifficulty('advanced')" class="btn btn-outline-danger">Advanced</button>
+                <div class="function-category">
+                  <h4>Difficulty Levels</h4>
+                  <div class="button-group">
+                    <button class="category-btn beginner-btn" @click="browseByDifficulty('beginner')">Beginner</button>
+                    <button class="category-btn intermediate-btn" @click="browseByDifficulty('intermediate')">Intermediate</button>
+                    <button class="category-btn advanced-btn" @click="browseByDifficulty('advanced')">Advanced</button>
                   </div>
                 </div>
               </div>
-              
-              <div class="text-center mt-4">
-                <button @click="getRandomWords" class="btn btn-primary me-2" :disabled="randomLoading">
-                  🎲 {{ randomLoading ? 'Loading...' : 'Random Words' }}
-                </button>
-                <button @click="showStats" class="btn btn-info">📊 Statistics</button>
+              <div style="text-align: center; margin-top: 20px;">
+                <button class="action-btn random-btn" @click="getRandomWords" :disabled="randomLoading">🎲 Random Words</button>
+              </div>
+              <div v-if="browseResults.length" class="browse-results mt-4">
+                <div v-for="word in browseResults" :key="word.id || word.german || word.word" class="word-card">
+                  <div class="word-title">{{ word.german || word.word }}</div>
+                  <div class="word-translation">{{ word.english || word.translation }}</div>
+                  <div class="word-type">{{ word.word_type }}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <!-- Back to Top Button -->
+      <button id="backToTopBtn" title="Back to top" style="display:none;position:fixed;bottom:40px;right:40px;z-index:9999;padding:10px 16px;font-size:18px;border:none;border-radius:50%;background:#667eea;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:background 0.2s;" @click="scrollToTop">
+        ↑
+      </button>
     </div>
-
-    <!-- Browse Results -->
-    <div v-if="browseResults?.length" class="browse-results mt-4">
-      <h4>Browse Results</h4>
-      <div class="row">
-        <div v-for="word in browseResults" :key="word.id" class="col-md-4 mb-3">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-title">{{ word.german }}</h6>
-              <p class="card-text">{{ word.english }}</p>
-              <small class="text-muted">{{ word.word_type }}</small>
-              <div class="mt-2">
-                <button @click="addToVocabulary(word)" class="btn btn-sm btn-outline-primary">
-                  Add to Vocabulary
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lookup Result Display -->
-    <div id="lookup-results" class="lookup-results mt-4"></div>
-  </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { getWord, api } from '../utils/api'
 import { useAppStore } from '../stores/app'
-import { useTranslation } from '../composables/useTranslation'
-import { api, getWord } from '../utils/api'
-import AutocompleteInput from '../components/AutocompleteInput.vue'
-import GermanCharacterHelper from '../components/GermanCharacterHelper.vue'
-import qs from 'qs'
-
 const appStore = useAppStore()
-const { t } = useTranslation()
 
-// Search functionality
 const searchQuery = ref('')
 const suggestions = ref([])
-const searchResults = ref(null)
+const showSuggestions = ref(false)
 const loading = ref(false)
-
-// Feature tabs
-const activeFeature = ref('conjugation')
+const error = ref('')
+const lookupResult = ref(null)
+const activeTab = ref('conjugation')
+const isReverseSearch = ref(false)
+const suggestionTimeout = ref(null)
 
 // Conjugation
-const conjugationQuery = ref('')
-const conjugationResults = ref(null)
 const conjugationLoading = ref(false)
+const conjugationResult = ref(null)
 
 // Examples
-const examplesQuery = ref('')
-const exampleResults = ref([])
 const examplesLoading = ref(false)
+const exampleResults = ref([])
 
 // Browse
 const browseResults = ref([])
 const randomLoading = ref(false)
 
-const fetchSuggestions = async (query) => {
-  if (!query || query.length < 2) {
-    suggestions.value = []
-    return
-  }
-  
-  try {
-    const response = await api.get(`/api/dictionary/suggestions?q=${encodeURIComponent(query)}`)
-    suggestions.value = response.data.suggestions || []
-  } catch (error) {
-    console.error('Failed to fetch suggestions:', error)
-  }
+onMounted(() => {
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('backToTopBtn')
+    if (!btn) return
+    btn.style.display = window.scrollY > 200 ? 'block' : 'none'
+  })
+})
+
+function insertChar(char) {
+  nextTick(() => {
+    const input = document.getElementById('lookupInput')
+    if (!input) return
+    const start = input.selectionStart
+    const end = input.selectionEnd
+    const value = input.value
+    input.value = value.substring(0, start) + char + value.substring(end)
+    input.focus()
+    input.setSelectionRange(start + 1, start + 1)
+    searchQuery.value = input.value
+  })
 }
 
-function displayLookupResult(data, word, lookupDivId = 'lookup-results') {
-  const lookupDiv = document.getElementById(lookupDivId)
-  if (!lookupDiv) return
-
-  if (data.error) {
-    lookupDiv.innerHTML = `<div class="no-results">No results found for <strong>${word}</strong>.</div>`
-    return
-  }
-
-  let html = `
-    <div class="word-info-box">
-      <div class="box-header-result">
-        Result Lookup
-        ${data.cached ? '<span class="cache-badge" title="Result from cache">⚡</span>' : ''}
-      </div>
-      <div class="word-title">
-        🇩🇪 ${word}
-        ${data.article ? `<span class="article-badge">${data.article}</span>` : ''}
-        ${data.word_type ? `<span class="type-badge">${data.word_type}</span>` : ''}
-        ${data.audio_url ? `<button onclick=\"playWordAudio('${word}')\" class=\"audio-btn\" title=\"Listen to pronunciation\">🔊</button>` : ''}
-      </div>
-      <div class="word-translation">${data.definition}</div>
-    </div>
-  `;
-  lookupDiv.innerHTML = html;
+function toggleSearchDirection() {
+  isReverseSearch.value = !isReverseSearch.value
+  searchQuery.value = ''
+  suggestions.value = []
+  showSuggestions.value = false
 }
 
-const lookupWord = async () => {
-  if (!searchQuery.value.trim()) {
-    appStore.showAlert('Please enter a word to search', 'warning')
+function fetchSuggestions(query) {
+  if (!query || isReverseSearch.value) {
+    showSuggestions.value = false
     return
   }
+  showSuggestions.value = true
+  suggestions.value = [{ word: 'Loading...', type: '' }]
+  api.get(`/dictionary/autocomplete?query=${encodeURIComponent(query)}&lang=${appStore.currentLanguage}`)
+    .then(res => {
+      suggestions.value = res.data.suggestions || []
+      showSuggestions.value = suggestions.value.length > 0
+    })
+    .catch(() => {
+      suggestions.value = []
+      showSuggestions.value = false
+    })
+}
 
+function selectSuggestion(word) {
+  searchQuery.value = word
+  showSuggestions.value = false
+  lookupWord()
+}
+
+async function lookupWord() {
+  const word = searchQuery.value.trim()
+  if (!word) return
   loading.value = true
-
+  error.value = ''
+  lookupResult.value = null
   try {
-    const data = await getWord(searchQuery.value)
-    displayLookupResult(data, searchQuery.value)
+    // Use appStore.currentLanguage for translation direction (no .value needed)
+    const srcLang = isReverseSearch.value ? appStore.currentLanguage : 'de'
+    const destLang = isReverseSearch.value ? 'de' : appStore.currentLanguage
+    console.log('Language settings:', { 
+      currentLanguage: appStore.currentLanguage,
+      srcLang, 
+      destLang
+    })
+    const data = await getWord(word, srcLang, destLang)
     if (data.error) {
-      appStore.showAlert(data.error, 'error')
-      searchResults.value = null
+      error.value = data.error
+      lookupResult.value = null
     } else {
-      searchResults.value = data
+      lookupResult.value = data
     }
-  } catch (error) {
-    appStore.showAlert('Failed to lookup word', 'error')
-    searchResults.value = null
+  } catch (e) {
+    error.value = 'Lookup failed.'
+    lookupResult.value = null
   } finally {
     loading.value = false
   }
 }
 
+
+
+
 function playWordAudio(word) {
-  console.log('Playing audio for word:', word); // Debug log
-
-  // Show loading state on the button
-  const audioBtn = document.querySelector(`button[onclick="playWordAudio('${word}')"]`);
-  if (audioBtn) {
-    audioBtn.innerHTML = '⌛'; // Loading indicator
-    audioBtn.disabled = true;
+  if (!lookupResult.value || !lookupResult.value.audio_url) {
+    alert('No audio available for this word.')
+    return
   }
-
-  if (!searchResults.value || !searchResults.value.audio_url) {
-    alert('No audio available for this word.');
-    if (audioBtn) {
-      audioBtn.innerHTML = '🔊';
-      audioBtn.disabled = false;
-    }
-    return;
-  }
-  const audio = new Audio(searchResults.value.audio_url);
-  audio.play();
-  audio.onended = () => {
-    if (audioBtn) {
-      audioBtn.innerHTML = '🔊';
-      audioBtn.disabled = false;
-    }
-  };
-  audio.onerror = () => {
-    if (audioBtn) {
-      audioBtn.innerHTML = '🔊';
-      audioBtn.disabled = false;
-    }
-    alert('Failed to play audio.');
-  };
+  const audio = new Audio(lookupResult.value.audio_url)
+  audio.play()
 }
-window.playWordAudio = playWordAudio;
 
-const getConjugation = async () => {
-  if (!conjugationQuery.value.trim()) return
-  
+function showTab(tab) {
+  activeTab.value = tab
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Conjugation Feature
+async function getConjugation() {
+  const word = searchQuery.value.trim()
+  if (!word) return
   conjugationLoading.value = true
-  
+  conjugationResult.value = null
   try {
-    const response = await api.get(`/api/dictionary/conjugation?verb=${encodeURIComponent(conjugationQuery.value)}`)
-    conjugationResults.value = response.data.conjugation
-  } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to get conjugation', 'error')
+    // Pass language to backend if supported
+    const res = await api.get(`/dictionary/conjugate?verb=${encodeURIComponent(word)}`)
+    conjugationResult.value = res.data.conjugation
+  } catch (e) {
+    conjugationResult.value = null
   } finally {
     conjugationLoading.value = false
   }
 }
 
-const getExamples = async () => {
-  if (!examplesQuery.value.trim()) return
-  
-  examplesLoading.value = true
-  
+// Examples Feature
+async function getExamples() {
+  const word = searchQuery.value.trim();
+  const lang = appStore.currentLanguage || 'en';
+
+  if (!word) {
+    error.value = 'Please enter a word to get examples.';
+    exampleResults.value = [];
+    return;
+  }
+
+  examplesLoading.value = true;
+  exampleResults.value = [];
+  error.value = '';
+
+  // Choose endpoint based on language
+  const endpoint = lang === 'en'
+    ? `/api/dictionary/examples?word=${encodeURIComponent(word)}`
+    : `/api/dictionary/examples-other?word=${encodeURIComponent(word)}&language=de&target_language=${lang}`;
+
   try {
-    const response = await api.get(`/api/dictionary/examples?word=${encodeURIComponent(examplesQuery.value)}`)
-    exampleResults.value = response.data.examples || []
-  } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to get examples', 'error')
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    if (data && ((data.examples && data.examples.length > 0) || (Array.isArray(data) && data.length > 0))) {
+      // Format data to match expected structure for display
+      exampleResults.value = lang === 'en'
+        ? data.examples
+        : [{ heading: 'Examples', examples: data }];
+    } else {
+      error.value = 'No examples found.';
+      exampleResults.value = [];
+    }
+  } catch (e) {
+    error.value = 'Failed to fetch examples.';
+    exampleResults.value = [];
   } finally {
-    examplesLoading.value = false
+    examplesLoading.value = false;
   }
 }
 
-const browseByType = async (type) => {
+// Browse Feature
+async function browseByType(type) {
   try {
-    const response = await api.get(`/api/dictionary/browse/type/${type}`)
-    browseResults.value = response.data.words || []
-  } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to browse words', 'error')
+    const lang = appStore.currentLanguage
+    const res = await api.get(`/dictionary/type/${type}?lang=${lang}`)
+    browseResults.value = res.data.words || []
+  } catch (e) {
+    browseResults.value = []
   }
 }
 
-const browseByDifficulty = async (difficulty) => {
+async function browseByDifficulty(difficulty) {
   try {
-    const response = await api.get(`/api/dictionary/browse/difficulty/${difficulty}`)
-    browseResults.value = response.data.words || []
-  } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to browse words', 'error')
+    const lang = appStore.currentLanguage
+    const res = await api.get(`/dictionary/difficulty/${difficulty}?lang=${lang}`)
+    browseResults.value = res.data.words || []
+  } catch (e) {
+    browseResults.value = []
   }
 }
 
-const getRandomWords = async () => {
+async function getRandomWords() {
   randomLoading.value = true
-  
   try {
-    const response = await api.get('/api/dictionary/random')
-    browseResults.value = response.data.words || []
-  } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to get random words', 'error')
+    const lang = appStore.currentLanguage
+    const res = await api.get(`/dictionary/random?lang=${lang}`)
+    browseResults.value = res.data.words || []
+  } catch (e) {
+    browseResults.value = []
   } finally {
     randomLoading.value = false
   }
 }
-
-const showStats = async () => {
-  try {
-    const response = await api.get('/api/dictionary/stats')
-    const stats = response.data
-    appStore.showAlert(`Dictionary contains ${stats.total_words} words`, 'info')
-  } catch (error) {
-    appStore.showAlert('Failed to load statistics', 'error')
-  }
-}
-
-const addToVocabulary = async (word) => {
-  try {
-    await api.post('/api/vocabulary', {
-      german: word.german || word.word,
-      english: word.english || word.translation,
-      word_type: word.word_type
-    })
-    appStore.showAlert('Added to vocabulary!', 'success')
-  } catch (error) {
-    appStore.showAlert(error.response?.data?.error || 'Failed to add to vocabulary', 'error')
-  }
-}
-
-const formatTenseName = (tenseKey) => {
-  return tenseKey.charAt(0).toUpperCase() + tenseKey.slice(1).replace('_', ' ')
-}
 </script>
 
-<style scoped>
-.function-box {
-  background: white;
-  border: 1px solid #e1e5e9;
-  border-radius: 12px;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.lookup-box {
-  border-left: 4px solid #dc3545;
-}
-
-.box-header {
-  background: #f8f9fa;
-  padding: 20px;
-  border-bottom: 1px solid #e1e5e9;
-}
-
-.box-header h3, .box-header h4 {
-  margin: 0 0 5px 0;
-  color: #333;
-  font-size: 1.3em;
-  font-weight: 600;
-}
-
-.box-header p {
-  margin: 0;
-  color: #666;
-  font-size: 0.95em;
-}
-
-.function-content {
-  padding: 20px;
-}
-
-.search-box {
-  display: flex;
-  gap: 10px;
-  align-items: start;
-}
-
-.input-wrapper {
-  flex: 1;
-}
-
-.definition-item {
-  padding: 1rem;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: #f8f9fa;
-}
-
-.example-item, .example-card {
-  padding: 0.75rem;
-  border-left: 3px solid #667eea;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.nav-tabs .nav-link {
-  border: none;
-  color: #666;
-}
-
-.nav-tabs .nav-link.active {
-  background-color: transparent;
-  border-bottom: 2px solid #667eea;
-  color: #667eea;
-}
-
-.lookup-results {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #e1e5e9;
-}
-
-.word-info-box {
-  margin-bottom: 15px;
-}
-
-.box-header-result {
-  background: #e9ecef;
-  padding: 10px;
-  border-radius: 8px 8px 0 0;
-  font-weight: 500;
-  position: relative;
-}
-
-.cache-badge {
-  background: #dc3545;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.word-title {
-  font-size: 1.2em;
-  font-weight: 600;
-  margin: 10px 0;
-}
-
-.article-badge, .type-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  margin-left: 5px;
-}
-
-.audio-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 0.9em;
-  margin-left: 5px;
-}
-
-.word-translation {
-  font-size: 1.1em;
-  color: #333;
-}
-</style>
+<style src="../utils/dictionary.css"></style>

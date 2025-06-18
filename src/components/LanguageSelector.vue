@@ -14,6 +14,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAppStore } from '../stores/app'
+import LanguageSelector from '../components/LanguageSelector.vue'
 
 const appStore = useAppStore()
 const selectedLanguage = ref('en')

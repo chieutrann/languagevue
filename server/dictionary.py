@@ -180,9 +180,19 @@ class GermanDictionary:
             word_type_elem = soup.find('span', class_='dwdswb-ft-blocktext')
             word_type = word_type_elem.text.strip().split(" · ")[0] if word_type_elem else ""
 
-            # Get translation
-            # translation = ts.translate_text(word, from_language=src_lang, to_language=lang_dest)
-            translation = GoogleTranslator(source=src_lang, target=lang_dest).translate(word)
+            # Get translation            # translation = ts.translate_text(word, from_language=src_lang, to_language=lang_dest)
+            try:
+                # Log the translation attempt with languages for debugging
+                print(f"Attempting translation: '{word}' from {src_lang} to {lang_dest}")
+                translation = GoogleTranslator(source=src_lang, target=lang_dest).translate(word)
+                print(f"Translation result: '{translation}'")
+            except Exception as e:
+                print(f"Translation error: {e}")
+                # Fallback to direct mapping if translation fails
+                if lang_dest == 'vi':
+                    translation = self._fallback_translation(word, src_lang, lang_dest)
+                else:
+                    translation = word
 
             # Extract article
             lemma_tag = soup.find("h1", class_="dwdswb-ft-lemmaansatz")
@@ -619,3 +629,50 @@ class GermanDictionary:
     def clear_cache(self):
         """Clear all cached data"""
         self._all_words = None
+
+    def _fallback_translation(self, word: str, src_lang: str, lang_dest: str) -> str:
+        """Fallback method for translations when the main translator fails"""
+        # For German -> Vietnamese common words
+        de_vi_dict = {
+            "heute": "hôm nay",
+            "haus": "ngôi nhà",
+            "frau": "phụ nữ",
+            "mann": "đàn ông",
+            "kind": "đứa trẻ",
+            "schule": "trường học",
+            "arbeit": "công việc",
+            "wasser": "nước",
+            "brot": "bánh mì",
+            "buch": "quyển sách",
+            "auto": "xe hơi",
+            "Deutschland": "nước Đức",
+            "gut": "tốt",
+            "schlecht": "tệ"
+        }
+        
+        # For Vietnamese -> German common words
+        vi_de_dict = {
+            "hôm nay": "heute",
+            "ngôi nhà": "das Haus",
+            "phụ nữ": "die Frau",
+            "đàn ông": "der Mann",
+            "đứa trẻ": "das Kind",
+            "trường học": "die Schule",
+            "công việc": "die Arbeit",
+            "nước": "das Wasser",
+            "bánh mì": "das Brot",
+            "quyển sách": "das Buch",
+            "xe hơi": "das Auto",
+            "nước Đức": "Deutschland",
+            "tốt": "gut",
+            "tệ": "schlecht"
+        }
+        
+        word_lower = word.lower()
+        
+        if src_lang == "de" and lang_dest == "vi":
+            return de_vi_dict.get(word_lower, f"[No translation for: {word}]")
+        elif src_lang == "vi" and lang_dest == "de":
+            return vi_de_dict.get(word_lower, f"[Keine Übersetzung für: {word}]")
+        else:
+            return f"[Translation from {src_lang} to {lang_dest} not supported in fallback mode]"

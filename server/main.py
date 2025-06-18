@@ -688,6 +688,12 @@ def api_get_word():
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 if __name__ == "__main__":
-
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Use 127.0.0.1 instead of 0.0.0.0 to avoid permission issues
+    # Try an alternative port if 5000 is giving permission errors
+    try:
+        app.run(debug=True, host='127.0.0.1', port=5000)
+    except Exception as e:
+        print(f"Failed to start on port 5000, trying alternative port: {e}")
+        # Try an alternative port if 5000 is blocked or in use
+        app.run(debug=True, host='127.0.0.1', port=5001)
     # app.run(debug=True)
