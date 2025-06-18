@@ -349,24 +349,25 @@ async function getExamples() {
   examplesLoading.value = true;
   exampleResults.value = [];
   error.value = '';
-  
-  // Choose endpoint based on language
-  const endpoint = lang === 'en'
-    ? `/api/dictionary/examples?word=${encodeURIComponent(word)}`
-    : `/api/dictionary/examples-other?word=${encodeURIComponent(word)}&language=de&target_language=${lang}`;
 
   try {
-    
-    const res = await fetch(endpoint);
-    const data = await res.json();
-    if (data && ((data.examples && data.examples.length > 0) || (Array.isArray(data) && data.length > 0))) {
-      // Format data to match expected structure for display
-      exampleResults.value = lang === 'en'
-        ? data.examples
-        : [{ heading: 'Examples', examples: data }];
+    let res;
+    if (lang === 'en') {
+      res = await api.get(`/dictionary/examples?word=${encodeURIComponent(word)}`);
+      if (res.data && res.data.examples && res.data.examples.length > 0) {
+        exampleResults.value = res.data.examples;
+      } else {
+        error.value = 'No examples found.';
+        exampleResults.value = [];
+      }
     } else {
-      error.value = 'No examples found.';
-      exampleResults.value = [];
+      res = await api.get(`/dictionary/examples-other?word=${encodeURIComponent(word)}&language=de&target_language=${lang}`);
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        exampleResults.value = [{ heading: 'Examples', examples: res.data }];
+      } else {
+        error.value = 'No examples found.';
+        exampleResults.value = [];
+      }
     }
   } catch (e) {
     error.value = 'Failed to fetch examples.';
