@@ -77,16 +77,19 @@ class Folder(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     # Relationship with vocabularies
     vocabularies = db.relationship('Vocabulary',
                                    backref='folder',
                                    lazy=True,
                                    cascade='all, delete-orphan')
+    user = db.relationship('User', backref='folders')
 
-    def __init__(self, name, description=''):
+    def __init__(self, name, description='', user_id=None):
         self.name = name
         self.description = description
+        self.user_id = user_id
 
     def to_dict(self):
         return {
@@ -94,7 +97,8 @@ class Folder(db.Model):
             'name': self.name,
             'description': self.description,
             'created_at': self.created_at.isoformat(),
-            'vocabularies': [vocab.to_dict() for vocab in self.vocabularies]
+            'vocabularies': [vocab.to_dict() for vocab in self.vocabularies],
+            'user_id': self.user_id
         }
 
 class Vocabulary(db.Model):

@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 from auth import auth_bp, login_required
 from flask_cors import CORS
 from deep_translator import GoogleTranslator
+from flask_login import LoginManager, current_user
 # secret_key = os
 # .environ
 
@@ -28,8 +29,9 @@ app.register_blueprint(auth_bp, url_prefix='')
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'german_dictionary.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')  # Change this!
 
-CORS(app)
+CORS(app, supports_credentials=True)
 
 
     # Initialize database
@@ -45,6 +47,16 @@ except Exception as e:
     print(f"Error initializing dictionary: {e}")
     dictionary = None
 
+# Initialize LoginManager
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+login_manager.init_app(app)
+
+from models import User
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 # Load data from files
@@ -243,7 +255,9 @@ def highlight_vocabulary(text, vocabulary):
 @app.route('/folders')
 def folders():
     """Main page showing all folders"""
-    folders = Folder.query.all()
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Unauthorized'}), 401
+    folders = Folder.query.filter_by(user_id=current_user.id).all()
     folders_dict = {str(folder.id): folder.to_dict() for folder in folders}
     return render_template('folders.html', folders=folders_dict)
 
@@ -273,7 +287,9 @@ def game_view(folder_id):
 def api_get_folders():
     
     """API endpoint to get all folders"""
-    folders = Folder.query.all()
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Authentication required'}), 401
+    folders = Folder.query.filter_by(user_id=current_user.id).all()
     folders_dict = {str(folder.id): folder.to_dict() for folder in folders}
     return jsonify(folders_dict)
 
@@ -296,59 +312,63 @@ def api_create_folder():
 
 
     new_folder = Folder(name=data['name'],
-                       description=data.get('description', ''))
+                       description=data.get('description', ''),
+                       user_id=current_user.id)
 
     db.session.add(new_folder)
     db.session.commit()
 
     return jsonify({'id': new_folder.id, 'folder': new_folder.to_dict()}), 201
 
-@app.route('/api/folders/<int:folder_id>', methods=['DELETE'])
-@login_required 
-def api_delete_folder(folder_id):
-    """API endpoint to delete a folder"""
+@app.route('/api/folders/<int:folder_id>', methods=['GET', 'DELETE'])
+@login_required
+def api_folder_handler(folder_id):
     folder = Folder.query.get_or_404(folder_id)
+    if folder.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
 
-    db.session.delete(folder)
-    db.session.commit()
+    if request.method == 'GET':
+        return jsonify(folder.to_dict())
 
-    return jsonify({'message': 'Folder deleted successfully'})
+    if request.method == 'DELETE':
+        db.session.delete(folder)
+        db.session.commit()
+        return jsonify({'message': 'Folder deleted successfully'})
+
+@app.route('/api/folders/<int:folder_id>/vocabularies', methods=['GET'])
+@login_required
+def api_get_vocabularies(folder_id):
+    folder = Folder.query.get_or_404(folder_id)
+    if folder.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    vocabularies = Vocabulary.query.filter_by(folder_id=folder_id).all()
+    return jsonify([v.to_dict() for v in vocabularies])
 
 @app.route('/api/folders/<int:folder_id>/vocabularies', methods=['POST'])
+@login_required
 def api_add_vocabulary(folder_id):
-    """API endpoint to add vocabulary to a folder"""
+    folder = Folder.query.get_or_404(folder_id)
+    if folder.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
     data = request.get_json()
+    word = data.get('word')
+    definition = data.get('definition')
 
-    if not data or 'word' not in data or 'definition' not in data:
+    if not word or not definition:
         return jsonify({'error': 'Word and definition are required'}), 400
 
-    folder = Folder.query.get_or_404(folder_id)
-
-    # Check for duplicate words in the same folder
-    existing_vocab = Vocabulary.query.filter_by(
-        folder_id=folder_id, word=data['word']).first()
-
-    if existing_vocab:
-        return jsonify({'error': 'Word already exists in this folder'}), 400
-
-    # Try to get audio URL from our dictionary if available
-    audio_url = data.get('audio_url', '')
-    if not audio_url and dictionary:
-        audio_url = dictionary.get_audio_url(data['word'])
-
-    new_vocabulary = Vocabulary(word=data['word'],
-                              definition=data['definition'],
-                              audio_url=audio_url,
-                              image_url=data.get('image_url', ''),
-                              folder_id=folder_id)
-
+    new_vocabulary = Vocabulary(
+        word=word,
+        definition=definition,
+        folder_id=folder_id
+    )
     db.session.add(new_vocabulary)
     db.session.commit()
-
-    return jsonify({'vocabulary': new_vocabulary.to_dict()}), 201
+    return jsonify(new_vocabulary.to_dict()), 201
 
 @app.route('/api/folders/<int:folder_id>/vocabularies/<int:vocab_id>',
            methods=['DELETE'])
+@login_required
 def api_delete_vocabulary(folder_id, vocab_id):
     """API endpoint to delete a vocabulary from a folder"""
     vocabulary = Vocabulary.query.filter_by(
@@ -361,6 +381,7 @@ def api_delete_vocabulary(folder_id, vocab_id):
 
 @app.route('/api/folders/<int:folder_id>/vocabularies/<int:vocab_id>',
            methods=['PUT'])
+@login_required
 def api_update_vocabulary(folder_id, vocab_id):
     """API endpoint to update a vocabulary in a folder"""
     data = request.get_json()
@@ -398,6 +419,7 @@ def api_update_vocabulary(folder_id, vocab_id):
     return jsonify({'vocabulary': vocabulary.to_dict()})
 
 @app.route('/api/folders/<int:folder_id>/check-word', methods=['POST'])
+@login_required
 def api_check_word(folder_id):
     """API endpoint to check if a word already exists in a folder"""
     data = request.get_json()
@@ -411,6 +433,7 @@ def api_check_word(folder_id):
     return jsonify({'exists': existing_vocab is not None})
 
 @app.route('/api/folders/<int:folder_id>/generate-quiz', methods=['POST'])
+@login_required
 def api_generate_quiz(folder_id):
     """API endpoint to generate a quiz from folder vocabularies"""
     data = request.get_json()
@@ -450,6 +473,7 @@ def api_generate_quiz(folder_id):
 
 @app.route('/api/folders/<int:folder_id>/generate-multiple-choice',
            methods=['POST'])
+@login_required
 def api_generate_multiple_choice(folder_id):
     """API endpoint to generate multiple choice questions from folder vocabularies"""
     data = request.get_json()
@@ -506,7 +530,6 @@ def api_generate_multiple_choice(folder_id):
 
 
 
-
 def get_adobe_stock_images(word, limit=3):
     """Retrieve image URLs from Adobe Stock search"""
     url = f"https://stock.adobe.com/search?k={word}"
@@ -557,6 +580,7 @@ def get_adobe_stock_images(word, limit=3):
         ]
 
 @app.route('/api/search-images/<word>')
+@login_required
 def api_search_images(word):
     """API endpoint to search for images"""
     images = get_adobe_stock_images(word)
@@ -567,72 +591,100 @@ def api_search_images(word):
 
 
 @app.route('/api/vocabulary/batch-save', methods=['POST'])
-def api_batch_save_vocabulary():
-    """API endpoint to save multiple vocabularies at once"""
+@login_required
+def api_batch_save_vocabularies():
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
     new_items = data.get('new_items', [])
     modified_items = data.get('modified_items', [])
-    new_ids = []
-    duplicate_words = []
+    
+    if not isinstance(new_items, list) or not isinstance(modified_items, list):
+        return jsonify({'error': 'Invalid data format'}), 400
 
-    # Get all existing words in the folder (case-insensitive)
-    folder_id = None
-    if new_items:
-        folder_id = new_items[0].get('folder_id')
-    elif modified_items:
-        folder_id = modified_items[0].get('folder_id')
-    existing_words = set()
-    if folder_id:
-        existing_words = set(
-            w.word.lower() for w in Vocabulary.query.filter_by(folder_id=folder_id).all()
-        )
-
-    # Save new vocabularies only if not already in folder
-    for vocab in new_items:
-        word_lower = vocab.get('word', '').strip().lower()
-        if word_lower and word_lower not in existing_words:
+    try:
+        # Process new items
+        for item in new_items:
+            folder_id = item.get('folder_id')
+            if not folder_id:
+                continue
+            # Check if folder belongs to user
+            folder = Folder.query.filter_by(id=folder_id, user_id=current_user.id).first()
+            if not folder:
+                # Or just skip, depends on desired behavior
+                continue 
+            
             new_vocab = Vocabulary(
-                word=vocab.get('word'),
-                definition=vocab.get('definition'),
-                folder_id=vocab.get('folder_id'),
-                audio_url=vocab.get('audio_url', ''),
-                image_url=vocab.get('image_url', '')
+                word=item.get('word'),
+                definition=item.get('definition'),
+                folder_id=folder_id,
+                audio_url=item.get('audio_url'),
+                image_url=item.get('image_url')
             )
             db.session.add(new_vocab)
-            db.session.flush()  # Get the new ID before commit
-            new_ids.append(new_vocab.id)
-            existing_words.add(word_lower)
-        elif word_lower:
-            duplicate_words.append(vocab.get('word'))
 
-    # Update modified vocabularies
-    for vocab in modified_items:
-        vocab_id = vocab.get('id')
-        existing = Vocabulary.query.get(vocab_id)
-        if existing:
-            existing.word = vocab.get('word', existing.word)
-            existing.definition = vocab.get('definition', existing.definition)
-            existing.audio_url = vocab.get('audio_url', existing.audio_url)
-            existing.image_url = vocab.get('image_url', existing.image_url)
+        # Process modified items
+        for item in modified_items:
+            vocab_id = item.get('id')
+            if not vocab_id:
+                continue
+            vocab = Vocabulary.query.get(vocab_id)
+            # Check if vocab exists and belongs to user
+            if vocab and vocab.folder.user_id == current_user.id:
+                vocab.word = item.get('word')
+                vocab.definition = item.get('definition')
+                vocab.audio_url = item.get('audio_url')
+                vocab.image_url = item.get('image_url')
+                vocab.updated_at = datetime.utcnow()
 
-    db.session.commit()
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Vocabularies saved successfully'})
 
-    return jsonify({'success': True, 'newItems': new_ids, 'duplicates': duplicate_words}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Batch save error: {e}")
+        return jsonify({'error': 'An internal error occurred', 'details': str(e)}), 500
 
-@app.route('/api/search-audio/<word>')
-def api_search_audio(word):
-    """API endpoint to search for audio pronunciation of a word"""
+@app.route('/api/search-images/<string:query>')
+@login_required
+def search_images(query):
+    # This is a placeholder. In a real app, you'd use an image search API.
+    try:
+        # Example using a dummy list of images from unsplash
+        images = [
+            f'https://source.unsplash.com/400x300/?{query},{i}' for i in range(9)
+        ]
+        return jsonify({'images': images})
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch images', 'details': str(e)}), 500
+
+
+@app.route('/api/search-audio/<string:word>')
+@login_required
+def search_audio(word):
+    # This can reuse the existing dictionary audio search logic
     if not dictionary:
         return jsonify({'error': 'Dictionary not available'}), 500
     
     audio_url = dictionary.get_audio_url(word)
+    
     if audio_url:
-        return jsonify({'audio_url': audio_url}), 200
-    else:
-        return jsonify({'error': 'Audio not found'}), 404
+        # Optionally, save it to the SearchedWord model if you want to cache it
+        existing_word = SearchedWord.query.filter_by(word=word).first()
+        if existing_word:
+            if not existing_word.audio_url:
+                existing_word.audio_url = audio_url
+                db.session.commit()
+        else:
+            # If the word doesn't exist in the database yet, create it
+            SearchedWord.add_or_update(word=word, audio_url=audio_url)
 
-@app.route('/api/dictionary/get-word', methods=['POST'])
-def api_get_word():
+    return jsonify({'audio_url': audio_url})
+
+
+@app.route('/api/translate', methods=['POST'])
+def translate_text():
     data = request.get_json() or request.form
     word = data.get("word")
     lang_dest = data.get("lang_dest", "en")

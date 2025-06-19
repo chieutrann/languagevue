@@ -21,7 +21,7 @@ exejs==0.0.4
 firebase-admin==6.9.0
 Flask==3.1.1
 flask-cors==6.0.1
-Flask-Login==0.6.3
+Flask-Login
 Flask-SQLAlchemy==3.1.1
 gitdb==4.0.12
 GitPython==3.1.44
