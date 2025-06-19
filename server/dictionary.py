@@ -421,86 +421,39 @@ class GermanDictionary:
         print(f"Total unique words loaded for autocomplete: {len(unique_words)}")
         return unique_words
 
-    def get_autocomplete_suggestions(self,
-                                     query: str,
-                                     limit: int = 10) -> List[Dict[str, str]]:
-        """Get smart autocomplete suggestions with caching"""
-        print(f"Getting suggestions for query: '{query}', limit: {limit}")
-        
-        # Load words from assets if not already loaded
+    def get_autocomplete_suggestions(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get smart autocomplete suggestions with type and article info."""
         if not self._all_words:
-            print("Loading words from assets for the first time")
             self._all_words = self.load_words_from_assets()
-        
-        # Handle empty query
-        if not query or len(query.strip()) == 0:
-            print("Empty query, returning empty suggestions")
-            return []
 
         query_lower = query.lower()
+        if not query_lower:
+            return []
+
         suggestions = []
-        
-        # Debug info
-        print(f"Looking for matches for '{query_lower}' in {len(self._all_words)} words")
 
         # Priority 1: Exact prefix matches
         prefix_matches = [
-            word for word in self._all_words
-            if word.lower().startswith(query_lower)
-        ][:limit]
-        
-        print(f"Found {len(prefix_matches)} prefix matches")
+            word_obj for word_obj in self._all_words
+            if word_obj['word'].lower().startswith(query_lower)
+        ]
 
-        for word in prefix_matches:
-            suggestions.append({"word": word, "type": "starts_with"})
+        # Add all prefix matches up to the limit
+        for word_obj in prefix_matches[:limit]:
+            suggestions.append(word_obj)
 
         # Priority 2: Contains matches (if we need more)
         if len(suggestions) < limit:
-            remaining_slots = limit - len(suggestions)
-            
+            seen_words = {s['word'] for s in suggestions}
             contains_matches = [
-                word for word in self._all_words
-                if query_lower in word.lower()
-                and not word.lower().startswith(query_lower)
-            ][:remaining_slots]
-            
-            print(f"Found {len(contains_matches)} contains matches")
-
-            for word in contains_matches:
-                suggestions.append({"word": word, "type": "contains"})
-
-        # Priority 3: Fuzzy matches using similarity (if we still need more)
-        if len(suggestions) < limit:
-            remaining_slots = limit - len(suggestions)
-            
-            # Get words that don't match exactly but might be similar
-            other_words = [
-                word for word in self._all_words
-                if not word.lower().startswith(query_lower) 
-                and query_lower not in word.lower()
+                word_obj for word_obj in self._all_words
+                if query_lower in word_obj['word'].lower() and word_obj['word'] not in seen_words
             ]
-            
-            # Calculate similarity for potential matches
-            similarity_matches = []
-            for word in other_words:
-                similarity = self._calculate_similarity(query_lower, word.lower())
-                if similarity > 0.6:  # Threshold for similarity
-                    similarity_matches.append((word, similarity))
-            
-            # Sort by similarity (highest first)
-            similarity_matches.sort(key=lambda x: x[1], reverse=True)
-            
-            print(f"Found {len(similarity_matches)} similarity matches")
-            
-            # Add top similarity matches
-            for word, sim in similarity_matches[:remaining_slots]:
-                suggestions.append({
-                    "word": word, 
-                    "type": "similar", 
-                    "similarity": f"{sim:.2f}"
-                })
-                
-        print(f"Returning {len(suggestions)} total suggestions")
+
+            remaining_slots = limit - len(suggestions)
+            for word_obj in contains_matches[:remaining_slots]:
+                suggestions.append(word_obj)
+
         return suggestions
 
     def get_words_by_type(self, word_type: str) -> List[Dict[str, str]]:

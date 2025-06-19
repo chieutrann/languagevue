@@ -864,6 +864,22 @@
   color: #ff8f00;
 }
 
+.suggestion-badge.noun-badge {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.suggestion-badge.verb-badge {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.suggestion-badge.adjective-badge {
+  background-color: #fff8e1;
+  color: #ff8f00;
+}
+
 .exact-match {
   border-left: 3px solid #1976d2;
 }

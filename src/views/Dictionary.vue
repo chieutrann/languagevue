@@ -39,9 +39,9 @@
                     >
                       <div class="suggestion-word">{{ suggestion.word }}</div>
                       <div class="suggestion-info">
-                        <span v-if="suggestion.type === 'starts_with'" class="suggestion-badge starts-with">Exact</span>
-                        <span v-else-if="suggestion.type === 'contains'" class="suggestion-badge contains">Contains</span>
-                        <span v-else-if="suggestion.type === 'similar'" class="suggestion-badge similar">Similar ({{ suggestion.similarity }})</span>
+                        <span v-if="suggestion.type === 'noun'" class="suggestion-badge noun-badge">{{ suggestion.article }}</span>
+                        <span v-else-if="suggestion.type === 'verb'" class="suggestion-badge verb-badge">verb</span>
+                        <span v-else-if="suggestion.type === 'adjective'" class="suggestion-badge adjective-badge">adj</span>
                       </div>
                     </div>
                   </div>
