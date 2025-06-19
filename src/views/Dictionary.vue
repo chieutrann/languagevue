@@ -78,6 +78,18 @@
                 class="audio-btn"
                 title="Listen to pronunciation"
               >🔊</button>
+              <button
+                v-if="authStore.isAuthenticated"
+                @click="openSaveToFolderModal"
+                class="star-btn"
+                :title="t('dictionary.addToVocabulary')"
+                style="margin-left: 4px; font-size: 20px; color: gold; background: none; border: none; cursor: pointer; vertical-align: middle; display: flex; align-items: center; gap: 4px;"
+              >
+                ★
+                <span style="font-size: 14px;">
+                  {{ t('dictionary.addToVocabulary') }}
+                </span>
+              </button>
             </div>
             
             <div class="word-translation">
@@ -195,13 +207,48 @@
     <button id="backToTopBtn" title="Back to top" style="display:none;position:fixed;bottom:40px;right:40px;z-index:9999;padding:10px 16px;font-size:18px;border:none;border-radius:50%;background:#667eea;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:background 0.2s;" @click="scrollToTop">
       ↑
     </button>
+
+    <!-- Save to Folder Modal -->
+    <div v-if="showSaveModal" class="modal-backdrop">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ t('dictionary.saveToFolderTitle') }}</h5>
+            <button type="button" class="btn-close" @click="closeSaveToFolderModal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="foldersLoading" class="text-center">{{ t('dictionary.loadingFolders') }}</div>
+            <div v-else>
+              <label for="folderSelect">{{ t('dictionary.selectFolder') }}</label>
+              <select id="folderSelect" v-model="selectedFolderId" class="form-select mb-2">
+                <option v-for="folder in folders" :key="folder.id" :value="folder.id">{{ folder.name }}</option>
+              </select>
+              <div class="mb-2">{{ t('dictionary.orCreateNew') }}</div>
+              <input v-model="newFolderName" class="form-control mb-2" :placeholder="t('dictionary.newFolderName')" />
+              <input v-model="newFolderDesc" class="form-control mb-2" :placeholder="t('dictionary.newFolderDesc')" />
+              <button class="btn btn-secondary btn-sm mb-2" @click="createFolder" :disabled="creatingFolder">{{ t('dictionary.createFolder') }}</button>
+            </div>
+            <div v-if="saveError" class="alert alert-danger mt-2">{{ saveError }}</div>
+            <div v-if="saveSuccess" class="alert alert-success mt-2">{{ saveSuccess }}</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeSaveToFolderModal">{{ t('dictionary.cancel') }}</button>
+            <button class="btn btn-primary" @click="saveToFolder" :disabled="savingWord || !selectedFolderId">{{ t('dictionary.save') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { getWord, api } from '../utils/api'
 import { useAppStore } from '../stores/app'
+import { useAuthStore } from '../stores/auth'
+import { useTranslation } from '../composables/useTranslation'
 const appStore = useAppStore()
+const authStore = useAuthStore()
+const { t } = useTranslation()
 
 const searchQuery = ref('')
 const suggestions = ref([])
@@ -224,6 +271,18 @@ const exampleResults = ref([])
 // Browse
 const browseResults = ref([])
 const randomLoading = ref(false)
+
+// Save to folder modal state
+const showSaveModal = ref(false)
+const folders = ref([])
+const foldersLoading = ref(false)
+const selectedFolderId = ref(null)
+const newFolderName = ref('')
+const newFolderDesc = ref('')
+const creatingFolder = ref(false)
+const savingWord = ref(false)
+const saveError = ref('')
+const saveSuccess = ref('')
 
 const inputWrapperRef = ref(null)
 
@@ -465,6 +524,91 @@ async function getRandomWords() {
   }
 }
 
+function openSaveToFolderModal() {
+  saveError.value = ''
+  saveSuccess.value = ''
+  showSaveModal.value = true
+  fetchFolders()
+}
+function closeSaveToFolderModal() {
+  showSaveModal.value = false
+  selectedFolderId.value = null
+  newFolderName.value = ''
+  newFolderDesc.value = ''
+  saveError.value = ''
+  saveSuccess.value = ''
+}
+async function fetchFolders() {
+  foldersLoading.value = true
+  try {
+    const res = await api.get('/folders')
+    // folders is an object, convert to array
+    folders.value = Object.entries(res.data).map(([id, folder]) => ({ id, ...folder }))
+    if (folders.value.length > 0) selectedFolderId.value = folders.value[0].id
+  } catch (e) {
+    saveError.value = 'Failed to load folders.'
+  } finally {
+    foldersLoading.value = false
+  }
+}
+async function createFolder() {
+  if (!newFolderName.value.trim()) {
+    saveError.value = 'Folder name required.'
+    return
+  }
+  creatingFolder.value = true
+  saveError.value = ''
+  try {
+    const res = await api.post('/folders', { name: newFolderName.value, description: newFolderDesc.value })
+    if (res.data.folder) {
+      folders.value.push({ id: res.data.id, ...res.data.folder })
+      selectedFolderId.value = res.data.id
+      newFolderName.value = ''
+      newFolderDesc.value = ''
+      saveSuccess.value = 'Folder created!'
+    }
+  } catch (e) {
+    saveError.value = e.response?.data?.error === 'already_exists' ? 'Folder already exists.' : 'Failed to create folder.'
+  } finally {
+    creatingFolder.value = false
+  }
+}
+async function saveToFolder() {
+  if (!selectedFolderId.value || !lookupResult.value) return
+  savingWord.value = true
+  saveError.value = ''
+  saveSuccess.value = ''
+  try {
+    // Check if word already exists in the folder
+    const checkRes = await api.post(`/folders/${selectedFolderId.value}/check-word`, {
+      word: lookupResult.value.word
+    })
+    if (checkRes.data && checkRes.data.exists) {
+      saveError.value = t('dictionary.saveErrorExists')
+      savingWord.value = false
+      return
+    }
+    // If not exists, add the word
+    const res = await api.post(`/folders/${selectedFolderId.value}/vocabularies`, {
+      word: lookupResult.value.word,
+      definition: lookupResult.value.definition
+    })
+    if (res.data && res.data.id) {
+      saveSuccess.value = t('dictionary.saveSuccess')
+      setTimeout(() => closeSaveToFolderModal(), 1200)
+    } else {
+      saveError.value = t('dictionary.saveErrorFailed')
+    }
+  } catch (e) {
+    if (e.response?.data?.error === 'already_exists' || e.response?.data?.error === 'Word already exists in this folder.') {
+      saveError.value = t('dictionary.saveErrorExists')
+    } else {
+      saveError.value = t('dictionary.saveErrorFailed')
+    }
+  } finally {
+    savingWord.value = false
+  }
+}
 
 function handleInput() {
   console.log('Input handled. Current query:', searchQuery.value);
@@ -549,5 +693,27 @@ input[type="text"] {
 
 .char-btn:hover {
   background: #eaeaea;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-dialog {
+  max-width: 400px;
+  width: 100%;
+}
+.star-btn {
+  color: gold;
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  vertical-align: middle;
 }
 </style>

@@ -53,7 +53,20 @@
     "randomWords": "🎲 Từ ngẫu nhiên",
     "statistics": "📊 Thống kê",
     "browseResults": "Kết quả duyệt",
-    "addToVocabulary": "Thêm vào từ vựng"
+    "addToVocabulary": "Thêm vào từ vựng",
+    "saveToFolder": "Lưu vào thư mục",
+    "saveToFolderTitle": "Lưu vào thư mục",
+    "selectFolder": "Chọn thư mục:",
+    "orCreateNew": "Hoặc tạo mới:",
+    "newFolderName": "Tên thư mục mới",
+    "newFolderDesc": "Mô tả (tùy chọn)",
+    "createFolder": "Tạo thư mục",
+    "loadingFolders": "Đang tải thư mục...",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "saveErrorExists": "Từ đã tồn tại trong thư mục này.",
+    "saveErrorFailed": "Lưu thất bại.",
+    "saveSuccess": "Đã lưu vào thư mục!"
   },
   "vocabulary": {
     "title": "📚 Danh sách từ vựng",

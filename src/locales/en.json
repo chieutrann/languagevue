@@ -53,7 +53,20 @@
     "randomWords": "🎲 Random Words",
     "statistics": "📊 Statistics",
     "browseResults": "Browse Results",
-    "addToVocabulary": "Add to Vocabulary"
+    "addToVocabulary": "Add to Vocabulary",
+    "saveToFolder": "Save to folder",
+    "saveToFolderTitle": "Save to Folder",
+    "selectFolder": "Select Folder:",
+    "orCreateNew": "Or create new:",
+    "newFolderName": "New folder name",
+    "newFolderDesc": "Description (optional)",
+    "createFolder": "Create Folder",
+    "loadingFolders": "Loading folders...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveErrorExists": "Word already exists in this folder.",
+    "saveErrorFailed": "Failed to save.",
+    "saveSuccess": "Saved to folder!"
   },
   "vocabulary": {
     "title": "📚 Vocabulary List",
