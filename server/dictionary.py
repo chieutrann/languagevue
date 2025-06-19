@@ -331,92 +331,176 @@ class GermanDictionary:
             if similarity > 0.3:  # Threshold for similarity
                 scored_words.append((german_word, similarity))
 
-        # Sort by similarity and return top matches
-        scored_words.sort(key=lambda x: x[1], reverse=True)
+        # Sort by similarity and return top matches        scored_words.sort(key=lambda x: x[1], reverse=True)
         return [word for word, score in scored_words[:limit]]
-
+        
     def _calculate_similarity(self, query: str, word: str) -> float:
-        """Calculate similarity score between two words"""
-        # Exact substring match gets high score
-        if query in word or word in query:
-            return 0.8
-
-        # Length difference penalty
-        len_diff = abs(len(query) - len(word))
-        if len_diff > 3:
+        """Calculate similarity between query and word (0.0 to 1.0)"""
+        # Handle edge cases
+        if not query or not word:
             return 0.0
-
-        # Character difference counting
-        max_len = max(len(query), len(word))
+        
+        query_lower = query.lower()
+        word_lower = word.lower()
+        
+        # Exact prefix match gets high score
+        if word_lower.startswith(query_lower):
+            return 0.9 + (0.1 * (len(query_lower) / len(word_lower)))
+            
+        # Exact contains match gets medium-high score
+        if query_lower in word_lower:
+            position = word_lower.find(query_lower)
+            # Higher score if match is closer to start
+            position_factor = 1.0 - (position / len(word_lower))
+            return 0.7 + (0.2 * position_factor)
+        
+        # Calculate Levenshtein distance for fuzzy matching
+        # This is a simplified implementation
+        m, n = len(query_lower), len(word_lower)
+        
+        # Use min length to avoid division by zero
+        max_len = max(m, n)
         if max_len == 0:
             return 0.0
-
-        matches = sum(a == b for a, b in zip(query, word))
+        
+        # Count matching characters (in order)
+        matches = 0
+        q_index = 0
+        
+        for char in word_lower:
+            if q_index < len(query_lower) and char == query_lower[q_index]:
+                matches += 1
+                q_index += 1
+                
+        # Calculate similarity score
         return matches / max_len
+        
+    def load_words_from_assets(self) -> List[Dict[str, str]]:
+        """Efficiently load all words from asset files for autocomplete, including type info."""
+        current_dir = Path(__file__).resolve().parent
+        base_dir = current_dir / "attached_assets"
+        print(f"Looking for assets in: {base_dir}")
 
-    def load_words_from_assets(self) -> List[str]:
-        """Efficiently load all words from asset files for autocomplete"""
-        base_dir = Path("attached_assets")
+        word_map = {}
 
-        def load_words(filename: str) -> List[str]:
+        def load_words_with_type(filename: str, word_type: str, article: Optional[str] = None):
             filepath = base_dir / filename
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     words = [line.strip() for line in f if line.strip()]
-                    return words
+                    print(f"Loaded {len(words)} words from {filename} as type '{word_type}'")
+                    for word in words:
+                        # Don't overwrite existing entries if they are more specific
+                        if word not in word_map:
+                            word_map[word] = {"word": word, "type": word_type, "article": article}
             except FileNotFoundError:
                 print(f"Asset file not found: {filepath}")
-                return []
             except Exception as e:
                 print(f"Error reading {filepath}: {e}")
-                return []
 
-        # Load words without prefixes
-        all_words = []
-        all_words.extend(load_words("substantiv_singular_der.txt"))
-        all_words.extend(load_words("substantiv_singular_die.txt"))
-        all_words.extend(load_words("substantiv_singular_das.txt"))
-        all_words.extend(load_words("Adjektive.txt"))
-        all_words.extend(load_words("Verben_regelmaesig.txt"))
-        all_words.extend(load_words("Verben_unregelmaeßig_Infinitiv.txt"))
+        # Load all word types
+        load_words_with_type("substantiv_singular_der.txt", "noun", "der")
+        load_words_with_type("substantiv_singular_die.txt", "noun", "die")
+        load_words_with_type("substantiv_singular_das.txt", "noun", "das")
+        load_words_with_type("Adjektive.txt", "adjective")
+        load_words_with_type("Verben_regelmaesig.txt", "verb")
+        load_words_with_type("Verben_unregelmaeßig_Infinitiv.txt", "verb")
 
-        # Add dictionary words
-        all_words.extend(self.detailed_dictionary.keys())
-        all_words.extend(self.vocabulary.keys())
+        # Add words from the detailed dictionary and vocabulary, which might have more info
+        for word, details in self.detailed_dictionary.items():
+            if word not in word_map:
+                 word_map[word] = {"word": word, "type": details.get("type", "unknown"), "article": details.get("gender")}
 
-        return sorted(list(set(filter(None, all_words))))
+        for word in self.vocabulary.keys():
+            if word not in word_map:
+                word_map[word] = {"word": word, "type": "vocabulary", "article": None}
+
+        unique_words = list(word_map.values())
+        # Sort by word for consistent order
+        unique_words.sort(key=lambda x: x['word'].lower())
+        print(f"Total unique words loaded for autocomplete: {len(unique_words)}")
+        return unique_words
 
     def get_autocomplete_suggestions(self,
                                      query: str,
                                      limit: int = 10) -> List[Dict[str, str]]:
         """Get smart autocomplete suggestions with caching"""
+        print(f"Getting suggestions for query: '{query}', limit: {limit}")
+        
+        # Load words from assets if not already loaded
         if not self._all_words:
+            print("Loading words from assets for the first time")
             self._all_words = self.load_words_from_assets()
+        
+        # Handle empty query
+        if not query or len(query.strip()) == 0:
+            print("Empty query, returning empty suggestions")
+            return []
 
         query_lower = query.lower()
         suggestions = []
+        
+        # Debug info
+        print(f"Looking for matches for '{query_lower}' in {len(self._all_words)} words")
 
         # Priority 1: Exact prefix matches
         prefix_matches = [
             word for word in self._all_words
             if word.lower().startswith(query_lower)
-        ]
+        ][:limit]
+        
+        print(f"Found {len(prefix_matches)} prefix matches")
 
-        for word in prefix_matches[:limit]:
+        for word in prefix_matches:
             suggestions.append({"word": word, "type": "starts_with"})
 
         # Priority 2: Contains matches (if we need more)
         if len(suggestions) < limit:
+            remaining_slots = limit - len(suggestions)
+            
             contains_matches = [
                 word for word in self._all_words
                 if query_lower in word.lower()
                 and not word.lower().startswith(query_lower)
-            ]
+            ][:remaining_slots]
+            
+            print(f"Found {len(contains_matches)} contains matches")
 
-            remaining_slots = limit - len(suggestions)
-            for word in contains_matches[:remaining_slots]:
+            for word in contains_matches:
                 suggestions.append({"word": word, "type": "contains"})
 
+        # Priority 3: Fuzzy matches using similarity (if we still need more)
+        if len(suggestions) < limit:
+            remaining_slots = limit - len(suggestions)
+            
+            # Get words that don't match exactly but might be similar
+            other_words = [
+                word for word in self._all_words
+                if not word.lower().startswith(query_lower) 
+                and query_lower not in word.lower()
+            ]
+            
+            # Calculate similarity for potential matches
+            similarity_matches = []
+            for word in other_words:
+                similarity = self._calculate_similarity(query_lower, word.lower())
+                if similarity > 0.6:  # Threshold for similarity
+                    similarity_matches.append((word, similarity))
+            
+            # Sort by similarity (highest first)
+            similarity_matches.sort(key=lambda x: x[1], reverse=True)
+            
+            print(f"Found {len(similarity_matches)} similarity matches")
+            
+            # Add top similarity matches
+            for word, sim in similarity_matches[:remaining_slots]:
+                suggestions.append({
+                    "word": word, 
+                    "type": "similar", 
+                    "similarity": f"{sim:.2f}"
+                })
+                
+        print(f"Returning {len(suggestions)} total suggestions")
         return suggestions
 
     def get_words_by_type(self, word_type: str) -> List[Dict[str, str]]:

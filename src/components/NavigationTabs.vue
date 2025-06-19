@@ -42,6 +42,7 @@ const tabs = [
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .nav-tab {

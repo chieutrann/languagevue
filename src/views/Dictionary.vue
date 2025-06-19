@@ -13,14 +13,14 @@
           <div class="function-content">
             <div class="search-box-group">
               <div class="search-box">
-                <div class="input-wrapper" style="position:relative;">
+                <div class="input-wrapper" style="position:relative;" ref="inputWrapperRef">
                   <input
                     type="text"
                     v-model="searchQuery"
                     id="lookupInput"
                     placeholder="Enter a German word to search..."
                     @keydown.enter="lookupWord"
-                    @input="() => { if (suggestionTimeout) clearTimeout(suggestionTimeout); suggestionTimeout = setTimeout(() => fetchSuggestions(searchQuery), 300) }"
+                    @input="handleInput"
                     autocomplete="off"/>
                   <div class="german-chars">
                     <button type="button" @click="insertChar('ä')" class="char-btn">ä</button>
@@ -35,9 +35,14 @@
                       :key="suggestion.word"
                       class="suggestion-item"
                       @click="selectSuggestion(suggestion.word)"
+                      :class="{ 'exact-match': suggestion.type === 'starts_with', 'contains-match': suggestion.type === 'contains', 'similar-match': suggestion.type === 'similar' }"
                     >
-                      <span class="suggestion-word">{{ suggestion.word }}</span>
-                      <span class="suggestion-type">{{ suggestion.type === 'starts_with' ? '🎯' : '🔍' }}</span>
+                      <div class="suggestion-word">{{ suggestion.word }}</div>
+                      <div class="suggestion-info">
+                        <span v-if="suggestion.type === 'starts_with'" class="suggestion-badge starts-with">Exact</span>
+                        <span v-else-if="suggestion.type === 'contains'" class="suggestion-badge contains">Contains</span>
+                        <span v-else-if="suggestion.type === 'similar'" class="suggestion-badge similar">Similar ({{ suggestion.similarity }})</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -188,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { getWord, api } from '../utils/api'
 import { useAppStore } from '../stores/app'
 const appStore = useAppStore()
@@ -215,13 +220,29 @@ const exampleResults = ref([])
 const browseResults = ref([])
 const randomLoading = ref(false)
 
+const inputWrapperRef = ref(null)
+
 onMounted(() => {
   window.addEventListener('scroll', () => {
     const btn = document.getElementById('backToTopBtn')
     if (!btn) return
     btn.style.display = window.scrollY > 200 ? 'block' : 'none'
   })
+
+  // Click outside to close suggestions
+  document.addEventListener('click', handleClickOutside)
 })
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+function handleClickOutside(event) {
+  if (!inputWrapperRef.value) return
+  if (!inputWrapperRef.value.contains(event.target)) {
+    showSuggestions.value = false
+  }
+}
 
 function insertChar(char) {
   nextTick(() => {
@@ -244,28 +265,56 @@ function toggleSearchDirection() {
   showSuggestions.value = false
 }
 
-function fetchSuggestions(query) {
-  if (!query || isReverseSearch.value) {
-    showSuggestions.value = false
-    return
+async function fetchSuggestions(query) {
+  console.log("fetchSuggestions called with:", query);
+
+  if (!query || query.length < 2 || isReverseSearch.value) {
+    console.log("Skipping suggestion fetch - empty query or reverse search mode");
+    showSuggestions.value = false;
+    suggestions.value = [];
+    return;
   }
-  showSuggestions.value = true
-  suggestions.value = [{ word: 'Loading...', type: '' }]
-  api.get(`/dictionary/autocomplete?query=${encodeURIComponent(query)}&lang=${appStore.currentLanguage}`)
-    .then(res => {
-      suggestions.value = res.data.suggestions || []
-      showSuggestions.value = suggestions.value.length > 0
-    })
-    .catch(() => {
-      suggestions.value = []
-      showSuggestions.value = false
-    })
+
+  showSuggestions.value = true;
+  suggestions.value = [{ word: 'Loading suggestions...', type: 'loading' }];
+
+  try {
+    // Use the correct API endpoint with /api prefix
+    const endpoint = `/dictionary/autocomplete?query=${encodeURIComponent(query)}&limit=10`;
+    console.log("Fetching suggestions from:", endpoint);
+    
+    const res = await api.get(endpoint);
+    console.log("Suggestions response:", res.data);
+
+    if (res.data && res.data.suggestions && res.data.suggestions.length > 0) {
+      // API returns {suggestions: [...]}
+      suggestions.value = res.data.suggestions;
+      showSuggestions.value = true;
+    } else {
+      console.log("No suggestions found in response, displaying 'not found' message.");
+      suggestions.value = [{ word: 'No matches found', type: 'info' }];
+      // Keep the suggestions box open to show the message
+      showSuggestions.value = true; 
+    }
+  } catch (error) {
+    console.error("Error fetching suggestions:", error);
+    suggestions.value = [{ word: 'Error loading suggestions', type: 'error' }];
+    // Keep the suggestions box open to show the error
+    showSuggestions.value = true; 
+    // Optionally, hide after a delay
+    setTimeout(() => {
+      if (suggestions.value.length > 0 && suggestions.value[0].type === 'error') {
+          showSuggestions.value = false;
+          suggestions.value = [];
+      }
+    }, 3000);
+  }
 }
 
 function selectSuggestion(word) {
-  searchQuery.value = word
-  showSuggestions.value = false
-  lookupWord()
+  searchQuery.value = word;
+  showSuggestions.value = false;
+  lookupWord();
 }
 
 async function lookupWord() {
@@ -410,6 +459,90 @@ async function getRandomWords() {
     randomLoading.value = false
   }
 }
+
+
+function handleInput() {
+  console.log('Input handled. Current query:', searchQuery.value);
+
+  if (suggestionTimeout) {
+    clearTimeout(suggestionTimeout);
+  }
+
+  suggestionTimeout = setTimeout(() => {
+    fetchSuggestions(searchQuery.value);
+  }, 300);
+}
 </script>
 
 <style src="../utils/dictionary.css"></style>
+<style scoped>
+.suggestions-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.suggestion-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 16px;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f8ff;
+}
+
+.suggestion-indicator {
+  color: #888;
+  font-size: 14px;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* To ensure the input has the proper styling */
+input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.german-chars {
+  margin-top: 8px;
+  display: flex;
+  gap: 5px;
+}
+
+.char-btn {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  background: #f8f9fa;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.char-btn:hover {
+  background: #eaeaea;
+}
+</style>

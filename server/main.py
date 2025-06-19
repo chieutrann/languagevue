@@ -170,20 +170,28 @@ def examples_other():
 @app.route('/api/dictionary/autocomplete')
 def autocomplete():
     if not dictionary:
+        print("Dictionary not initialized")
         return jsonify({'suggestions': []})
 
     query = request.args.get('query', '').strip().lower()
     limit = min(request.args.get('limit', 10, type=int),
                 20)  # Limit max results
 
+    print(f"Autocomplete request: query='{query}', limit={limit}")
+
     if not query or len(query) < 1:
+        print("Empty query, returning empty suggestions")
         return jsonify({'suggestions': []})
 
     try:
+        print(f"Fetching suggestions for '{query}'")
         suggestions = dictionary.get_autocomplete_suggestions(query, limit)
+        print(f"Found {len(suggestions)} suggestions")
         return jsonify({'suggestions': suggestions})
     except Exception as e:
         print(f"Error getting autocomplete for '{query}': {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'suggestions': []})
 
 
@@ -686,6 +694,41 @@ def api_get_word():
 
 # Set secret key for session management
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
+# Initialize autocomplete cache immediately instead of using a decorator
+def initialize_autocomplete_cache():
+    """Initialize the autocomplete cache to speed up first user request"""
+    if not dictionary:
+        print("Dictionary not initialized, skipping autocomplete cache initialization")
+        return
+        
+    # Check if attached_assets folder exists
+    from pathlib import Path
+    current_dir = Path(__file__).resolve().parent
+    assets_dir = current_dir / "attached_assets"
+    
+    if not assets_dir.exists():
+        print(f"Warning: attached_assets folder not found at {assets_dir}. Autocomplete may not work properly.")
+    else:
+        print(f"Found attached_assets folder at {assets_dir}")
+        # List files in the directory to help with debugging
+        files = [f.name for f in assets_dir.iterdir() if f.is_file()]
+        print(f"Files in the attached_assets directory: {', '.join(files)}")
+    
+    print("Pre-loading autocomplete words into cache...")
+    try:
+        dictionary._all_words = dictionary.load_words_from_assets()
+        print(f"Successfully loaded {len(dictionary._all_words)} words into autocomplete cache")
+        # Print the first 5 words as a sample
+        if dictionary._all_words and len(dictionary._all_words) > 0:
+            print(f"Sample words: {dictionary._all_words[:5]}")
+    except Exception as e:
+        print(f"Error initializing autocomplete cache: {e}")
+        import traceback
+        traceback.print_exc()
+
+# Run the initialization immediately
+initialize_autocomplete_cache()
 
 if __name__ == "__main__":
     # Use 127.0.0.1 instead of 0.0.0.0 to avoid permission issues
