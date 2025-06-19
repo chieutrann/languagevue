@@ -79,7 +79,12 @@
                 title="Listen to pronunciation"
               >🔊</button>
             </div>
-            <div class="word-translation">{{ lookupResult.definition }}</div>
+            
+            <div class="word-translation">
+              <span v-if="appStore.currentLanguage === 'en'">🇬🇧</span>
+              <span v-else-if="appStore.currentLanguage === 'vi'">🇻🇳</span>
+              {{ lookupResult.definition }}
+            </div>
           </div>
         </div>
         <!-- Additional Features Tabs (moved here) -->
@@ -206,7 +211,7 @@ const error = ref('')
 const lookupResult = ref(null)
 const activeTab = ref('conjugation')
 const isReverseSearch = ref(false)
-const suggestionTimeout = ref(null)
+let suggestionTimeout = null // changed from const ref(null)
 
 // Conjugation
 const conjugationLoading = ref(false)

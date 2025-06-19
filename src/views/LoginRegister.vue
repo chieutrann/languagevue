@@ -134,6 +134,21 @@
                   </div>
                 </div>
                 
+                <div class="mb-3">
+                  <label for="registerConfirmPassword" class="form-label">Confirm Password</label>
+                  <input 
+                    type="password" 
+                    class="form-control" 
+                    id="registerConfirmPassword" 
+                    v-model="registerForm.confirmPassword"
+                    :class="{ 'is-invalid': registerErrors.confirmPassword }"
+                    required
+                  >
+                  <div v-if="registerErrors.confirmPassword" class="invalid-feedback">
+                    {{ registerErrors.confirmPassword }}
+                  </div>
+                </div>
+                
                 <button 
                   type="submit" 
                   class="btn btn-primary w-100 mb-3"
@@ -154,6 +169,10 @@
                   {{ googleLoading ? 'Signing up...' : 'Sign up with Google' }}
                 </button>
               </div>
+              <p class="mt-3 text-center">
+                Already have an account?
+                <a href="#" @click.prevent="activeTab = 'login'">Login here</a>.
+              </p>
             </div>
           </div>
         </div>
@@ -187,7 +206,8 @@ const loginForm = reactive({
 const registerForm = reactive({
   username: '',
   email: '',
-  password: ''
+  password: '',
+  confirmPassword: ''
 })
 
 const loginErrors = reactive({})
@@ -201,7 +221,6 @@ const clearErrors = () => {
 const handleLogin = async () => {
   clearErrors()
   loginLoading.value = true
-  
   try {
     await authStore.login(loginForm.email, loginForm.password)
     appStore.showAlert('Login successful!', 'success')
@@ -210,8 +229,17 @@ const handleLogin = async () => {
     const errorData = error.response?.data
     if (errorData?.errors) {
       Object.assign(loginErrors, errorData.errors)
+    } else if (errorData?.error) {
+      // Show error in form if possible
+      if (errorData.error.toLowerCase().includes('email')) {
+        loginErrors.email = errorData.error
+      } else if (errorData.error.toLowerCase().includes('password')) {
+        loginErrors.password = errorData.error
+      } else {
+        appStore.showAlert(errorData.error, 'error')
+      }
     } else {
-      appStore.showAlert(errorData?.error || 'Login failed', 'error')
+      appStore.showAlert('Login failed', 'error')
     }
   } finally {
     loginLoading.value = false
@@ -221,17 +249,38 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   clearErrors()
   registerLoading.value = true
-  
+  // Frontend validation for confirm password
+  if (registerForm.password !== registerForm.confirmPassword) {
+    registerErrors.confirmPassword = 'Passwords do not match.'
+    registerLoading.value = false
+    return
+  }
   try {
-    await authStore.register(registerForm.username, registerForm.email, registerForm.password)
+    await authStore.register(
+      registerForm.username,
+      registerForm.email,
+      registerForm.password,
+      registerForm.confirmPassword
+    )
     appStore.showAlert('Registration successful!', 'success')
     router.push('/')
   } catch (error) {
     const errorData = error.response?.data
     if (errorData?.errors) {
       Object.assign(registerErrors, errorData.errors)
+    } else if (errorData?.error) {
+      // Show error in form if possible
+      if (errorData.error.toLowerCase().includes('email')) {
+        registerErrors.email = errorData.error
+      } else if (errorData.error.toLowerCase().includes('username')) {
+        registerErrors.username = errorData.error
+      } else if (errorData.error.toLowerCase().includes('password')) {
+        registerErrors.password = errorData.error
+      } else {
+        appStore.showAlert(errorData.error, 'error')
+      }
     } else {
-      appStore.showAlert(errorData?.error || 'Registration failed', 'error')
+      appStore.showAlert('Registration failed', 'error')
     }
   } finally {
     registerLoading.value = false

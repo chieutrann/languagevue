@@ -65,7 +65,7 @@ const loadNews = async () => {
   error.value = null
   
   try {
-    const response = await api.get('/api/news')
+    const response = await api.get('/news')
     articles.value = response.data.articles || []
   } catch (err) {
     error.value = err.response?.data?.error || 'Failed to load news articles'

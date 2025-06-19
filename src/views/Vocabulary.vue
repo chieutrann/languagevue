@@ -315,7 +315,7 @@ const loadVocabulary = async () => {
   loading.value = true
   
   try {
-    const response = await api.get('/api/vocabulary')
+    const response = await api.get('/vocabulary')
     vocabulary.value = response.data.vocabulary || []
   } catch (error) {
     appStore.showAlert(error.response?.data?.error || 'Failed to load vocabulary', 'error')
