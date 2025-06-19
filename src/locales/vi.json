@@ -101,19 +101,17 @@
     "deleteWord": "Xóa từ"
   },
   "folders": {
-    "title": "📂 Kho từ vựng",
+    "title": "📂 Thư mục",
     "createNew": "Tạo thư mục mới",
-    "editFolder": "Sửa thư mục",
+    "editFolder": "Chỉnh sửa thư mục",
     "createNewFolder": "Tạo thư mục mới",
     "folderName": "Tên thư mục",
-    "description": "Mô tả (Tùy chọn)",
-    "saving": "Đang lưu...",
-    "saveFolder": "Lưu thư mục",
+    "folderDescription": "Mô tả (tùy chọn)",
     "searchFolders": "Tìm kiếm thư mục...",
     "loading": "Đang tải thư mục...",
     "noFolders": "Không tìm thấy thư mục",
-    "adjustSearch": "Thử điều chỉnh tìm kiếm.",
-    "createFirst": "Tạo thư mục từ vựng đầu tiên để bắt đầu.",
+    "adjustSearch": "Hãy thử điều chỉnh tìm kiếm của bạn.",
+    "createFirst": "Tạo thư mục đầu tiên của bạn để bắt đầu.",
     "words": "từ",
     "openFolder": "Mở thư mục",
     "edit": "Sửa",
@@ -125,7 +123,17 @@
     "adding": "Đang thêm...",
     "addWordBtn": "Thêm từ",
     "noWordsInFolder": "Chưa có từ nào trong thư mục này.",
-    "removeFromFolder": "Xóa khỏi thư mục"
+    "removeFromFolder": "Xóa khỏi thư mục",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa thư mục này không? Tất cả các từ vựng trong thư mục này cũng sẽ bị xóa.",
+    "edit": "Chỉnh sửa",
+    "play": "Chơi",
+    "clearSearch": "Xóa tìm kiếm",
+    "createFolder": "Tạo thư mục",
+    "cancel": "Hủy",
+    "saveChanges": "Lưu thay đổi",
+    "create": "Tạo",
+    "deleting": "Đang xóa...",
+    "delete": "Xóa"
   },
   "news": {
     "title": "📰 Tin tức tiếng Đức mới nhất",
@@ -170,5 +178,16 @@
     "enterWord": "Vui lòng nhập từ để tìm kiếm",
     "failedToLoad": "Tải thất bại",
     "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối."
+  },
+  "folder": {
+    "saveAll": "Lưu tất cả",
+    "addVocabulary": "Thêm từ vựng",
+    "searchAudio": "Tìm kiếm",
+    "playAudio": "Phát âm thanh",
+    "deleteVocabulary": "Xóa",
+    "switchAll": "Hoán đổi tất cả",
+    "addMore": "Thêm nữa",
+    "cancel": "Hủy",
+    "confirmDelete": "Xác nhận xóa"
   }
 }

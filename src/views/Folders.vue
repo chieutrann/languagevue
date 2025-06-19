@@ -27,7 +27,7 @@
             v-model="searchQuery"
           >
           <button class="btn btn-outline-secondary" @click="searchQuery = ''">
-            <i class="fas fa-times"></i>
+            <i class="fas fa-times"></i>{{ t('folders.clearSearch') }}
           </button>
         </div>
       </div>
@@ -45,9 +45,9 @@
     <div v-else-if="filteredFolders.length === 0" class="text-center my-5">
       <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
       <h3>No folders found</h3>
-      <p class="text-muted">{{ searchQuery ? 'Try adjusting your search.' : 'Create your first folder to get started.' }}</p>
+      <p class="text-muted">{{ searchQuery ? t('folders.adjustSearch') : t('folders.createFirst') }}</p>
       <button v-if="authStore.isAuthenticated" class="btn btn-primary" @click="showNewFolderModal">
-        <i class="fas fa-plus me-2"></i>Create Folder
+        <i class="fas fa-plus me-2"></i>{{ t('folders.createFolder') }}
       </button>
     </div>
 
@@ -68,13 +68,13 @@
               </span>
               <div class="btn-group">
                 <router-link v-if="authStore.isAuthenticated" :to="{ name: 'Folder', params: { id: folder.id } }" class="btn btn-sm btn-outline-primary">
-                  <i class="fas fa-edit me-1"></i>Edit
+                  <i class="fas fa-edit me-1"></i>{{ t('folders.edit') }}
                 </router-link>
                 <router-link 
                   v-if="folder.vocabularies && folder.vocabularies.length > 0" 
                   :to="{ name: 'Game', params: { id: folder.id } }" 
                   class="btn btn-sm btn-outline-success">
-                  <i class="fas fa-gamepad me-1"></i>Play
+                  <i class="fas fa-gamepad me-1"></i>{{ t('folders.play') }}
                 </router-link>
                 <button v-if="authStore.isAuthenticated" @click="confirmDeleteFolder(folder.id)" class="btn btn-sm btn-outline-danger">
                   <i class="fas fa-trash"></i>
@@ -91,13 +91,13 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ isEditing ? 'Edit Folder' : 'Create New Folder' }}</h5>
+            <h5 class="modal-title">{{ isEditing ? t('folders.editFolder') : t('folders.createNewFolder') }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <form @submit.prevent="handleFolderSubmit">
             <div class="modal-body">
               <div class="mb-3">
-                <label for="folderName" class="form-label">Folder Name</label>
+                <label for="folderName" class="form-label">{{ t('folders.folderName') }}</label>
                 <input 
                   type="text" 
                   class="form-control" 
@@ -107,7 +107,7 @@
                 >
               </div>
               <div class="mb-3">
-                <label for="folderDescription" class="form-label">Description (optional)</label>
+                <label for="folderDescription" class="form-label">{{ t('folders.folderDescription') }}</label>
                 <textarea 
                   class="form-control" 
                   id="folderDescription" 
@@ -117,10 +117,10 @@
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('folders.cancel') }}</button>
               <button type="submit" class="btn btn-primary" :disabled="folderSubmitting">
                 <span v-if="folderSubmitting" class="spinner-border spinner-border-sm me-2"></span>
-                {{ isEditing ? 'Save Changes' : 'Create' }}
+                {{ isEditing ? t('folders.saveChanges') : t('folders.create') }}
               </button>
             </div>
           </form>
@@ -137,16 +137,16 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>Are you sure you want to delete this folder? All vocabularies in this folder will be deleted as well.</p>
+            <p>{{ t('folders.confirmDelete') }}</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('folders.cancel') }}</button>
             <button 
               @click="deleteFolder" 
               type="button" 
               class="btn btn-danger"
               :disabled="deleteSubmitting">
-              {{ deleteSubmitting ? 'Deleting...' : 'Delete' }}
+              {{ deleteSubmitting ? t('folders.deleting') : t('folders.delete') }}
             </button>
           </div>
         </div>

@@ -12,17 +12,16 @@
         <h1 class="h2">{{ folder.name }}</h1>
         <div>
           <button id="saveAllBtn" class="btn btn-primary me-2" @click="saveAllVocabularies" v-if="isDirty">
-            <i class="fas fa-save me-2"></i>Save All
+            <i class="fas fa-save me-2"></i>{{ t('folder.saveAll') }}
           </button>
           <button id="addVocabularyBtn" class="btn btn-success" @click="addNewVocabulary">
-            <i class="fas fa-plus me-2"></i>Add Vocabulary
+            <i class="fas fa-plus me-2"></i>{{ t('folder.addVocabulary') }}
           </button>
-
-                          <router-link 
+                <router-link 
                   v-if="folder.vocabularies && folder.vocabularies.length > 0" 
                   :to="{ name: 'Game', params: { id: folder.id } }" 
                   class="btn btn-sm btn-outline-success">
-                  <i class="fas fa-gamepad me-1"></i>Play
+                  <i class="fas fa-gamepad me-1"></i>{{ t('folders.play') }}
                 </router-link>
 
         </div>
@@ -53,9 +52,15 @@
               <input type="text" class="form-control definition-input" v-model="vocab.definition" @focus="makeEditable($event, vocab)" @input="markAsModified(vocab)" :readonly="!vocab.isNew" placeholder="Definition">
             </div>
             <div class="col-auto">
-                <button class="btn btn-sm btn-outline-info me-1" @click="searchAudio(vocab)" title="Search for audio"><i class="fas fa-volume-up"></i></button>
-                <button v-if="vocab.audio_url" class="btn btn-sm btn-outline-success me-1" @click="playAudio(vocab.audio_url)" title="Play audio"><i class="fas fa-play"></i></button>
-                <button class="btn btn-sm btn-outline-danger delete-vocabulary" @click="confirmDeleteVocabulary(vocab, index)"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-sm btn-outline-info me-1" @click="searchAudio(vocab)" title="Search for audio">
+                  <i class="fas fa-volume-up"></i>{{ t('folder.searchAudio') }}
+                </button>
+                <button v-if="vocab.audio_url" class="btn btn-sm btn-outline-success me-1" @click="playAudio(vocab.audio_url)" title="Play audio">
+                  <i class="fas fa-play"></i>{{ t('folder.playAudio') }}
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-vocabulary" @click="confirmDeleteVocabulary(vocab, index)">
+                  <i class="fas fa-trash"></i>{{ t('folder.deleteVocabulary') }}
+                </button>
             </div>
           </div>
         </div>
@@ -64,14 +69,14 @@
 
       <div class="mt-3 d-flex justify-content-between" v-if="vocabularies.length > 0">
         <button class="btn btn-secondary" @click="switchAllTermsAndDefinitions">
-          <i class="fas fa-exchange-alt me-2"></i>Switch All
+          <i class="fas fa-exchange-alt me-2"></i>{{ t('folder.switchAll') }}
         </button>
 
         <button id="saveAllBtn" class="btn btn-primary me-2" @click="saveAllVocabularies" v-if="isDirty">
-            <i class="fas fa-save me-2"></i>Save All
+            <i class="fas fa-save me-2"></i>{{ t('folder.saveAll') }}
           </button>
         <button id="addMoreVocabularyBtn" class="btn btn-success" @click="addNewVocabulary">
-          <i class="fas fa-plus me-2"></i>Add More
+          <i class="fas fa-plus me-2"></i>{{ t('folder.addMore') }}
         </button>
       </div>
     </div>
@@ -88,8 +93,8 @@
               <p>Are you sure you want to delete this vocabulary item?</p>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-danger" @click="deleteVocabulary">Confirm Delete</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('folder.cancel') }}</button>
+              <button type="button" class="btn btn-danger" @click="deleteVocabulary">{{ t('folder.confirmDelete') }}</button>
             </div>
           </div>
         </div>
@@ -127,6 +132,7 @@ import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { api } from '@/utils/api';
 import { Modal } from 'bootstrap';
+import { useTranslation } from '../composables/useTranslation';
 
 const route = useRoute();
 const folder = ref({});
@@ -146,6 +152,8 @@ const vocabForImageSearch = ref(null);
 let currentAudio = null;
 
 const bottomRef = ref(null);
+
+const { t } = useTranslation()
 
 const isDirty = computed(() => {
   if (vocabularies.value.some(v => v.isNew && (v.word || v.definition))) return true;

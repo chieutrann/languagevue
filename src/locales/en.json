@@ -106,14 +106,14 @@
     "editFolder": "Edit Folder",
     "createNewFolder": "Create New Folder",
     "folderName": "Folder Name",
-    "description": "Description (Optional)",
+    "folderDescription": "Description (optional)",
     "saving": "Saving...",
     "saveFolder": "Save Folder",
     "searchFolders": "Search folders...",
     "loading": "Loading folders...",
     "noFolders": "No folders found",
     "adjustSearch": "Try adjusting your search.",
-    "createFirst": "Create your first vocabulary folder to get started.",
+    "createFirst": "Create your first folder to get started.",
     "words": "words",
     "openFolder": "Open Folder",
     "edit": "Edit",
@@ -125,7 +125,15 @@
     "adding": "Adding...",
     "addWordBtn": "Add Word",
     "noWordsInFolder": "No words in this folder yet.",
-    "removeFromFolder": "Remove from folder"
+    "removeFromFolder": "Remove from folder",
+    "confirmDelete": "Are you sure you want to delete this folder? All vocabularies in this folder will be deleted as well.",
+    "clearSearch": "Clear Search",
+    "createFolder": "Create Folder",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "create": "Create",
+    "deleting": "Deleting...",
+    "play": "Play"
   },
   "news": {
     "title": "📰 Latest German News",
@@ -170,5 +178,16 @@
     "enterWord": "Please enter a word to search",
     "failedToLoad": "Failed to load",
     "networkError": "Network error. Please check your connection."
+  },
+  "folder": {
+    "saveAll": "Save All",
+    "addVocabulary": "Add Vocabulary",
+    "searchAudio": "Search Audio",
+    "playAudio": "Play Audio",
+    "deleteVocabulary": "Delete",
+    "switchAll": "Switch All",
+    "addMore": "Add More",
+    "cancel": "Cancel",
+    "confirmDelete": "Confirm Delete"
   }
 }
