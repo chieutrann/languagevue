@@ -49,17 +49,14 @@
             </div>
             <div class="col">
               
-              <input type="text" class="form-control definition-input" v-model="vocab.definition" @focus="makeEditable($event, vocab)" @input="markAsModified(vocab)" :readonly="!vocab.isNew" placeholder="Definition">
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-sm btn-outline-info me-1" @click="searchAudio(vocab)" title="Search for audio">
-                  <i class="fas fa-volume-up"></i>{{ t('folder.searchAudio') }}
+              <input type="text" class="form-control definition-input" v-model="vocab.definition" @focus="makeEditable($event, vocab)" @input="markAsModified(vocab)" :readonly="!vocab.isNew" placeholder="Definition">            </div>            <div class="col-auto">                <button class="btn btn-sm" 
+                  :class="vocab.audio_url ? 'btn-outline-success' : 'btn-outline-info'" 
+                  @click="vocab.audio_url ? playAudio(vocab.audio_url) : searchAudio(vocab)" 
+                  :title="vocab.audio_url ? 'Play audio' : 'Search for audio'">
+                  <i class="fas fa-volume-up"></i>
                 </button>
-                <button v-if="vocab.audio_url" class="btn btn-sm btn-outline-success me-1" @click="playAudio(vocab.audio_url)" title="Play audio">
-                  <i class="fas fa-play"></i>{{ t('folder.playAudio') }}
-                </button>
-                <button class="btn btn-sm btn-outline-danger delete-vocabulary" @click="confirmDeleteVocabulary(vocab, index)">
-                  <i class="fas fa-trash"></i>{{ t('folder.deleteVocabulary') }}
+                <button class="btn btn-sm btn-outline-danger delete-vocabulary" @click="deleteVocabularyDirectly(vocab, index)" title="Delete">
+                  <i class="fas fa-trash"></i>
                 </button>
             </div>
           </div>
@@ -79,26 +76,7 @@
           <i class="fas fa-plus me-2"></i>{{ t('folder.addMore') }}
         </button>
       </div>
-    </div>
-
-    <!-- Modals -->
-    <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Confirm Deletion</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <p>Are you sure you want to delete this vocabulary item?</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('folder.cancel') }}</button>
-              <button type="button" class="btn btn-danger" @click="deleteVocabulary">{{ t('folder.confirmDelete') }}</button>
-            </div>
-          </div>
-        </div>
-    </div>
+    </div>    <!-- Modals -->
     <div class="modal fade" id="imageSearchModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -140,8 +118,6 @@ const vocabularies = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const originalVocabularies = ref([]);
-const vocabToDelete = ref(null);
-let deleteModal = null;
 let imageSearchModal = null;
 
 const alert = ref({ message: '', type: 'info' });
@@ -181,10 +157,8 @@ onMounted(async () => {
 
   } catch (err) {
     error.value = 'Failed to load folder data. ' + (err.response?.data?.error || err.message);
-    showAlert(error.value, 'danger');
-  } finally {
+    showAlert(error.value, 'danger');  } finally {
     loading.value = false;
-    deleteModal = new Modal(document.getElementById('deleteConfirmModal'));
     imageSearchModal = new Modal(document.getElementById('imageSearchModal'));
   }
 });
@@ -220,15 +194,7 @@ function switchAllTermsAndDefinitions() {
   });
 }
 
-function confirmDeleteVocabulary(vocab, index) {
-    vocabToDelete.value = { vocab, index };
-    deleteModal.show();
-}
-
-async function deleteVocabulary() {
-  if (!vocabToDelete.value) return;
-  const { vocab, index } = vocabToDelete.value;
-
+async function deleteVocabularyDirectly(vocab, index) {
   if (vocab.isNew) {
     vocabularies.value.splice(index, 1);
   } else {
@@ -243,9 +209,14 @@ async function deleteVocabulary() {
       showAlert(message, 'danger');
     }
   }
-  deleteModal.hide();
-  vocabToDelete.value = null;
 }
+
+function confirmDeleteVocabulary(vocab, index) {
+    vocabToDelete.value = { vocab, index };
+    deleteModal.show();
+}
+
+
 
 async function saveAllVocabularies() {
   const newItems = vocabularies.value.filter(v => v.isNew && v.word && v.definition);
@@ -316,6 +287,8 @@ async function searchAudio(vocab) {
             vocab.audio_url = response.data.audio_url;
             markAsModified(vocab);
             showAlert('Audio found and added!', 'success');
+            // Automatically play the audio once found
+            playAudio(response.data.audio_url);
         } else {
             showAlert('No audio found for this word.', 'info');
         }
@@ -359,12 +332,15 @@ function playAudio(audioUrl) {
     object-fit: cover;
 }
 .term-input, .definition-input {
-  border: 1px solid transparent;
-  background-color: transparent;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  color: #212529; /* Ensure text is visible */
+  transition: all 0.2s ease;
 }
 .term-input:focus, .definition-input:focus,
 .term-input:not([readonly]), .definition-input:not([readonly]) {
   border: 1px solid #ced4da;
   background-color: #fff;
+  box-shadow: 0 0 0 0.1rem rgba(0,123,255,.1);
 }
 </style>
