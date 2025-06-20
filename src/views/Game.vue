@@ -10,40 +10,37 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+      <div class="spinner-border text-primary" role="status">      <span class="visually-hidden">{{ t('common.loading') }}</span>
       </div>
-      <p class="mt-3">Loading games...</p>
+      <p class="mt-3">{{ t('game.loading') }}</p>
     </div>
     
     <!-- Game Selection -->
     <div v-else-if="gameState === 'selection'" id="gameSelection" class="row mb-4">
-      <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1>{{ folder.name }} - Games</h1>
+      <div class="col-12">        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1>{{ folder.name }} - {{ t('game.title') }}</h1>
           <router-link :to="{ name: 'Folder', params: { id } }" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Folder
+            <i class="fas fa-arrow-left me-2"></i>{{ t('game.backToFolder') }}
           </router-link>
         </div>
         
-        <h2 class="mb-4">Choose a Game</h2>
+        <h2 class="mb-4">{{ t('game.chooseGame') }}</h2>
         <div class="row">
           <div class="col-md-6 mb-3">
             <div class="card h-100">
-              <div class="card-body text-center">
-                <i class="fas fa-question-circle fa-4x text-primary mb-3"></i>
-                <h4>Definition Quiz</h4>
-                <p class="card-text">Test your knowledge by providing definitions for words</p>
+              <div class="card-body text-center">                <i class="fas fa-question-circle fa-4x text-primary mb-3"></i>
+                <h4>{{ t('game.defQuiz') }}</h4>
+                <p class="card-text">{{ t('game.defQuizDesc') }}</p>
                 <div class="mb-3">
                   <div class="form-floating">
                     <select class="form-select" id="quizQuestionCount" v-model="quizSettings.questionCount">
                       <option v-for="n in 10" :key="`quiz-${n}`" :value="n">{{ n }}</option>
                     </select>
-                    <label for="quizQuestionCount">Number of Questions</label>
+                    <label for="quizQuestionCount">{{ t('game.numQuestions') }}</label>
                   </div>
                 </div>
                 <button class="btn btn-primary" @click="startQuiz" :disabled="!hasEnoughWords">
-                  <i class="fas fa-play me-2"></i>Start Quiz
+                  <i class="fas fa-play me-2"></i>{{ t('game.startQuiz') }}
                 </button>
               </div>
             </div>
@@ -51,16 +48,15 @@
           
           <div class="col-md-6 mb-3">
             <div class="card h-100">
-              <div class="card-body text-center">
-                <i class="fas fa-list-ul fa-4x text-success mb-3"></i>
-                <h4>Multiple Choice</h4>
-                <p class="card-text">Choose the correct definition from multiple options</p>
+              <div class="card-body text-center">                <i class="fas fa-list-ul fa-4x text-success mb-3"></i>
+                <h4>{{ t('game.multiChoice') }}</h4>
+                <p class="card-text">{{ t('game.multiChoiceDesc') }}</p>
                 <div class="mb-3">
                   <div class="form-floating">
                     <select class="form-select" id="mcQuestionCount" v-model="mcSettings.questionCount">
                       <option v-for="n in 10" :key="`mc-${n}`" :value="n">{{ n }}</option>
                     </select>
-                    <label for="mcQuestionCount">Number of Questions</label>
+                    <label for="mcQuestionCount">{{ t('game.numQuestions') }}</label>
                   </div>
                 </div>
                 <button 
@@ -68,10 +64,10 @@
                   @click="startMultipleChoice" 
                   :disabled="vocabularyCount < 4"
                 >
-                  <i class="fas fa-play me-2"></i>Start Game
+                  <i class="fas fa-play me-2"></i>{{ t('game.startGame') }}
                 </button>
                 <small v-if="vocabularyCount < 4" class="text-muted d-block mt-2">
-                  At least 4 vocabularies required
+                  {{ t('game.minVocab') }}
                 </small>
               </div>
             </div>
@@ -82,11 +78,10 @@
 
     <!-- Quiz Game -->
     <div v-else-if="gameState === 'quiz'" id="quizGame" class="row">
-      <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2>Definition Quiz</h2>
+      <div class="col-12">        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>{{ t('game.defQuiz') }}</h2>
           <button class="btn btn-secondary" @click="endGame">
-            <i class="fas fa-times me-2"></i>End Game
+            <i class="fas fa-times me-2"></i>{{ t('game.endGame') }}
           </button>
         </div>
         
@@ -103,45 +98,42 @@
           <div class="card-body">
             <div class="text-center mb-4">
               <h4 id="quizQuestionText">{{ currentQuestion.question }}</h4>
-              <div v-if="currentQuestion.audio_url" id="quizAudioContainer" class="mt-2">
-                <button class="btn btn-outline-primary" id="playQuizAudio" @click="playAudio(currentQuestion.audio_url)">
-                  <i class="fas fa-volume-up me-2"></i>Play Pronunciation
+              <div v-if="currentQuestion.audio_url" id="quizAudioContainer" class="mt-2">                <button class="btn btn-outline-primary" id="playQuizAudio" @click="playAudio(currentQuestion.audio_url)">
+                  <i class="fas fa-volume-up me-2"></i>{{ t('game.playPronunciation') }}
                 </button>
               </div>
             </div>
-            <div class="mb-3">
-              <label for="quizAnswer" class="form-label">Your Answer:</label>
+            <div class="mb-3">              <label for="quizAnswer" class="form-label">{{ t('game.yourAnswer') }}</label>
               <textarea 
                 class="form-control" 
                 id="quizAnswer" 
                 v-model="userAnswer" 
                 rows="3" 
-                placeholder="Enter the definition..."
+                :placeholder="t('game.enterDefinition')"
                 @keydown.enter="submitQuizAnswer"
               ></textarea>
             </div>
             <div class="text-center">
               <button class="btn btn-primary" id="submitQuizAnswer" @click="submitQuizAnswer">
-                <i class="fas fa-check me-2"></i>Submit Answer
+                <i class="fas fa-check me-2"></i>{{ t('game.submitAnswer') }}
               </button>
             </div>
           </div>
         </div>
 
         <div v-else id="quizResult" class="card mt-3">
-          <div class="card-body">
-            <h5 id="quizResultTitle" class="mb-3">
+          <div class="card-body">            <h5 id="quizResultTitle" class="mb-3">
               <span v-if="isCorrect" class="text-success">
-                <i class="fas fa-check-circle me-2"></i>Correct!
+                <i class="fas fa-check-circle me-2"></i>{{ t('game.correct') }}
               </span>
               <span v-else class="text-danger">
-                <i class="fas fa-times-circle me-2"></i>Not Quite
+                <i class="fas fa-times-circle me-2"></i>{{ t('game.notQuite') }}
               </span>
             </h5>
-            <p><strong>Correct Answer:</strong> <span id="quizCorrectAnswer">{{ currentQuestion.correct_answer }}</span></p>
-            <p><strong>Your Answer:</strong> <span id="quizUserAnswer">{{ userAnswer }}</span></p>
+            <p><strong>{{ t('game.correctAnswer') }}</strong> <span id="quizCorrectAnswer">{{ currentQuestion.correct_answer }}</span></p>
+            <p><strong>{{ t('game.yourAnswerLabel') }}</strong> <span id="quizUserAnswer">{{ userAnswer }}</span></p>
             <button class="btn btn-primary" id="nextQuizQuestion" @click="nextQuestion">
-              <i class="fas fa-arrow-right me-2"></i>Next Question
+              <i class="fas fa-arrow-right me-2"></i>{{ t('game.nextQuestion') }}
             </button>
           </div>
         </div>
@@ -150,11 +142,10 @@
 
     <!-- Multiple Choice Game -->
     <div v-else-if="gameState === 'multipleChoice'" id="mcGame" class="row">
-      <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2>Multiple Choice</h2>
+      <div class="col-12">        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>{{ t('game.multiChoice') }}</h2>
           <button class="btn btn-secondary" @click="endGame">
-            <i class="fas fa-times me-2"></i>End Game
+            <i class="fas fa-times me-2"></i>{{ t('game.endGame') }}
           </button>
         </div>
         
@@ -171,9 +162,8 @@
           <div class="card-body">
             <div class="text-center mb-4">
               <h4 id="mcQuestionText">{{ currentQuestion.question }}</h4>
-              <div v-if="currentQuestion.audio_url" id="mcAudioContainer" class="mt-2">
-                <button class="btn btn-outline-primary" id="playMcAudio" @click="playAudio(currentQuestion.audio_url)">
-                  <i class="fas fa-volume-up me-2"></i>Play Pronunciation
+              <div v-if="currentQuestion.audio_url" id="mcAudioContainer" class="mt-2">                <button class="btn btn-outline-primary" id="playMcAudio" @click="playAudio(currentQuestion.audio_url)">
+                  <i class="fas fa-volume-up me-2"></i>{{ t('game.playPronunciation') }}
                 </button>
               </div>
             </div>
@@ -191,48 +181,88 @@
         </div>
 
         <div v-else id="mcResult" class="card mt-3">
-          <div class="card-body">
-            <h5 id="mcResultTitle" class="mb-3">
+          <div class="card-body">            <h5 id="mcResultTitle" class="mb-3">
               <span v-if="isCorrect" class="text-success">
-                <i class="fas fa-check-circle me-2"></i>Correct!
+                <i class="fas fa-check-circle me-2"></i>{{ t('game.correct') }}
               </span>
               <span v-else class="text-danger">
-                <i class="fas fa-times-circle me-2"></i>Incorrect
+                <i class="fas fa-times-circle me-2"></i>{{ t('game.incorrect') }}
               </span>
-            </h5>
-            <p><strong>Correct Answer:</strong> <span id="mcCorrectAnswer">
+            </h5>            <p><strong>{{ t('game.correctAnswer') }}</strong> <span id="mcCorrectAnswer">
               {{ currentQuestion.choices[currentQuestion.correct_index] }}
             </span></p>
-            <p><strong>Your Answer:</strong> <span id="mcUserAnswer">
-              {{ selectedAnswer !== null ? currentQuestion.choices[selectedAnswer] : 'No answer' }}
+            <p><strong>{{ t('game.yourAnswerLabel') }}</strong> <span id="mcUserAnswer">
+              {{ selectedAnswer !== null ? currentQuestion.choices[selectedAnswer] : t('game.noAnswer') }}
             </span></p>
             <button class="btn btn-primary" id="nextMcQuestion" @click="nextQuestion">
-              <i class="fas fa-arrow-right me-2"></i>Next Question
+              <i class="fas fa-arrow-right me-2"></i>{{ t('game.nextQuestion') }}
             </button>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Game Results -->
+    </div>    <!-- Game Results -->
     <div v-else-if="gameState === 'results'" id="gameResults" class="row">
       <div class="col-12">
-        <div class="card text-center">
-          <div class="card-body">
+        <div class="card">
+          <div class="card-body text-center">
             <i class="fas fa-trophy fa-4x text-warning mb-3"></i>
-            <h2>Game Complete!</h2>
+            <h2>{{ t('game.gameComplete') }}</h2>
             <h3 id="finalScore" class="text-primary">
-              Your Score: {{ gameScore }} / {{ gameData.questions.length }}
+              {{ t('game.yourScore') }} {{ gameScore }} / {{ gameData.questions.length }}
             </h3>
             <p id="finalMessage" class="text-muted mb-4">
               {{ getFinalMessage() }}
             </p>
+              <!-- Question Results Summary -->
+            <div class="question-results mb-4">
+              <h4 class="mb-3">{{ t('game.questionSummary') }}</h4>
+              <div class="accordion" id="questionResultsAccordion">
+                <div v-for="(result, index) in questionResults" :key="index" class="accordion-item">
+                  <h2 class="accordion-header">                      <button 
+                      class="accordion-button collapsed" 
+                      :class="{'bg-success bg-opacity-10': result.isCorrect, 'bg-danger bg-opacity-10': !result.isCorrect}"
+                      type="button" 
+                      data-bs-toggle="collapse" 
+                      :data-bs-target="'#questionResult' + index"
+                      @click="toggleAccordion(index)"
+                    >
+                      <i :class="result.isCorrect ? 'fas fa-check-circle text-success me-2' : 'fas fa-times-circle text-danger me-2'"></i>
+                      {{ t('game.question') }} {{ index + 1 }}: {{ result.question }}
+                    </button>
+                  </h2>
+                  <div :id="'questionResult' + index" class="accordion-collapse collapse" data-bs-parent="#questionResultsAccordion">
+                    <div class="accordion-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="mb-3">
+                            <strong>{{ t('game.correctAnswer') }}</strong>
+                            <div class="p-2 border rounded mt-1">{{ result.correctAnswer }}</div>
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="mb-3">
+                            <strong>{{ t('game.yourAnswerLabel') }}</strong>
+                            <div 
+                              class="p-2 border rounded mt-1" 
+                              :class="{'border-success': result.isCorrect, 'border-danger': !result.isCorrect}"
+                            >
+                              {{ result.userAnswer || t('game.noAnswer') }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div class="btn-group">
               <button class="btn btn-primary" @click="gameState = 'selection'">
-                <i class="fas fa-redo me-2"></i>Play Again
+                <i class="fas fa-redo me-2"></i>{{ t('game.playAgain') }}
               </button>
               <router-link :to="{ name: 'Folder', params: { id } }" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to Folder
+                <i class="fas fa-arrow-left me-2"></i>{{ t('game.backToFolder') }}
               </router-link>
             </div>
           </div>
@@ -243,12 +273,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../utils/api'
+import { useTranslation } from '../composables/useTranslation'
+import { Collapse } from 'bootstrap'
 
 const route = useRoute()
 const id = route.params.id
+const { t } = useTranslation()
 
 // States
 const loading = ref(true)
@@ -263,6 +296,7 @@ const isCorrect = ref(false)
 const gameScore = ref(0)
 const currentAudio = ref(null)
 const flashMessage = ref(null)
+const questionResults = ref([]) // Track results for each question
 
 // Settings
 const quizSettings = ref({
@@ -316,6 +350,7 @@ const startQuiz = async () => {
     gameState.value = 'quiz'
     showingResult.value = false
     userAnswer.value = ''
+    questionResults.value = [] // Reset question results
   } catch (error) {
     showFlashMessage('Failed to start quiz.', 'danger')
     console.error('Error starting quiz:', error)
@@ -342,6 +377,7 @@ const startMultipleChoice = async () => {
     gameState.value = 'multipleChoice'
     showingResult.value = false
     selectedAnswer.value = null
+    questionResults.value = [] // Reset question results
   } catch (error) {
     showFlashMessage('Failed to start multiple choice game.', 'danger')
     console.error('Error starting multiple choice:', error)
@@ -366,6 +402,14 @@ const submitQuizAnswer = () => {
     gameScore.value++
   }
   
+  // Store the result for this question
+  questionResults.value.push({
+    question: currentQuestion.value.question,
+    userAnswer: userAnswer.value,
+    correctAnswer: currentQuestion.value.correct_answer,
+    isCorrect: isCorrect.value
+  })
+  
   showingResult.value = true
 }
 
@@ -378,6 +422,14 @@ const submitMcAnswer = (index) => {
   if (isCorrect.value) {
     gameScore.value++
   }
+  
+  // Store the result for this question
+  questionResults.value.push({
+    question: currentQuestion.value.question,
+    userAnswer: currentQuestion.value.choices[index],
+    correctAnswer: currentQuestion.value.choices[currentQuestion.value.correct_index],
+    isCorrect: isCorrect.value
+  })
   
   showingResult.value = true
 }
@@ -392,6 +444,8 @@ const nextQuestion = () => {
   } else {
     // Game is over
     gameState.value = 'results'
+    // Initialize accordion when showing results
+    initializeAccordion()
   }
 }
 
@@ -408,20 +462,32 @@ const playAudio = (url) => {
   currentAudio.value.play()
 }
 
+const initializeAccordion = () => {
+  if (gameState.value === 'results') {
+    nextTick(() => {
+      // Initialize all Bootstrap collapse elements
+      const accordionItems = document.querySelectorAll('.accordion-collapse')
+      accordionItems.forEach(item => {
+        new Collapse(item, { toggle: false })
+      })
+    })
+  }
+}
+
 const getFinalMessage = () => {
   const totalQuestions = gameData.value.questions.length
   const percentage = (gameScore.value / totalQuestions) * 100
   
   if (percentage === 100) {
-    return 'Perfect score! Amazing job!'
+    return t('game.perfectScore')
   } else if (percentage >= 80) {
-    return 'Great job! You really know these words!'
+    return t('game.greatJob')
   } else if (percentage >= 60) {
-    return 'Good work! Keep practicing!'
+    return t('game.goodWork')
   } else if (percentage >= 40) {
-    return 'Nice effort! Try reviewing the words again.'
+    return t('game.niceEffort')
   } else {
-    return 'Keep practicing! You\'ll get better with time.'
+    return t('game.keepPracticing')
   }
 }
 
@@ -455,6 +521,12 @@ onMounted(() => {
   }
 })
 
+watch(gameState, (newValue) => {
+  if (newValue === 'results') {
+    initializeAccordion()
+  }
+})
+
 const handleKeydown = (e) => {
   if (gameState.value === 'multipleChoice' && !showingResult.value) {
     // Allow number keys 1-4 for multiple choice
@@ -465,6 +537,15 @@ const handleKeydown = (e) => {
   } else if (showingResult.value && e.key === 'Enter') {
     // Enter to proceed to next question when viewing result
     nextQuestion()
+  }
+}
+
+// Function to manually toggle accordion collapse
+const toggleAccordion = (index) => {
+  const collapseElement = document.getElementById(`questionResult${index}`)
+  if (collapseElement) {
+    const bsCollapse = Collapse.getInstance(collapseElement) || new Collapse(collapseElement, { toggle: false })
+    bsCollapse.toggle()
   }
 }
 </script>
@@ -515,5 +596,26 @@ const handleKeydown = (e) => {
 
 .card:hover {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.question-results {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.accordion-button:not(.collapsed) {
+  color: var(--bs-body-color);
+}
+
+.accordion-button.bg-success.bg-opacity-10:not(.collapsed) {
+  background-color: rgba(var(--bs-success-rgb), 0.2) !important;
+}
+
+.accordion-button.bg-danger.bg-opacity-10:not(.collapsed) {
+  background-color: rgba(var(--bs-danger-rgb), 0.2) !important;
+}
+
+.accordion-button:focus {
+  box-shadow: none;
 }
 </style>

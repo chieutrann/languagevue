@@ -157,7 +157,8 @@
     "success": "Thao tác thành công",
     "confirm": "Bạn có chắc chắn?",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "backToTop": "Trở về đầu trang"
   },
   "alerts": {
     "loginSuccess": "Đăng nhập thành công!",
@@ -178,8 +179,7 @@
     "enterWord": "Vui lòng nhập từ để tìm kiếm",
     "failedToLoad": "Tải thất bại",
     "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối."
-  },
-  "folder": {
+  },  "folder": {
     "saveAll": "Lưu tất cả",
     "addVocabulary": "Thêm từ vựng",
     "searchAudio": "Tìm kiếm",
@@ -189,5 +189,41 @@
     "addMore": "Thêm nữa",
     "cancel": "Hủy",
     "confirmDelete": "Xác nhận xóa"
+  },
+  "game": {
+    "title": "Trò chơi",
+    "backToFolder": "Quay lại thư mục",
+    "chooseGame": "Chọn trò chơi",
+    "defQuiz": "Câu đố định nghĩa",
+    "defQuizDesc": "Kiểm tra kiến thức của bạn bằng cách cung cấp định nghĩa cho từ",
+    "multiChoice": "Trắc nghiệm",
+    "multiChoiceDesc": "Chọn định nghĩa đúng từ nhiều lựa chọn",
+    "numQuestions": "Số lượng câu hỏi",
+    "startQuiz": "Bắt đầu trắc nghiệm",
+    "startGame": "Bắt đầu trò chơi",
+    "minVocab": "Yêu cầu ít nhất 4 từ vựng",
+    "endGame": "Kết thúc trò chơi",
+    "loading": "Đang tải trò chơi...",
+    "playPronunciation": "Phát âm",
+    "yourAnswer": "Câu trả lời của bạn:",
+    "enterDefinition": "Nhập định nghĩa...",
+    "submitAnswer": "Gửi câu trả lời",
+    "correct": "Đúng!",
+    "notQuite": "Chưa đúng",
+    "incorrect": "Sai",
+    "correctAnswer": "Câu trả lời đúng:",
+    "yourAnswerLabel": "Câu trả lời của bạn:",
+    "nextQuestion": "Câu hỏi tiếp theo",
+    "gameComplete": "Đã hoàn thành!",
+    "yourScore": "Điểm của bạn:",
+    "playAgain": "Chơi lại",
+    "perfectScore": "Điểm tuyệt đối! Thật tuyệt vời!",
+    "greatJob": "Làm tốt lắm! Bạn thực sự biết những từ này!",
+    "goodWork": "Làm tốt! Hãy tiếp tục luyện tập!",
+    "niceEffort": "Nỗ lực tốt! Hãy xem lại các từ một lần nữa.",
+    "keepPracticing": "Hãy tiếp tục luyện tập! Bạn sẽ tiến bộ hơn theo thời gian.",
+    "noAnswer": "Không có câu trả lời",
+    "questionSummary": "Tổng kết câu hỏi",
+    "question": "Câu hỏi"
   }
 }

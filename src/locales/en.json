@@ -178,8 +178,7 @@
     "enterWord": "Please enter a word to search",
     "failedToLoad": "Failed to load",
     "networkError": "Network error. Please check your connection."
-  },
-  "folder": {
+  },  "folder": {
     "saveAll": "Save All",
     "addVocabulary": "Add Vocabulary",
     "searchAudio": "Search Audio",
@@ -189,5 +188,41 @@
     "addMore": "Add More",
     "cancel": "Cancel",
     "confirmDelete": "Confirm Delete"
+  },
+  "game": {
+    "title": "Games",
+    "backToFolder": "Back to Folder",
+    "chooseGame": "Choose a Game",
+    "defQuiz": "Definition Quiz",
+    "defQuizDesc": "Test your knowledge by providing definitions for words",
+    "multiChoice": "Multiple Choice",
+    "multiChoiceDesc": "Choose the correct definition from multiple options",
+    "numQuestions": "Number of Questions",
+    "startQuiz": "Start Quiz",
+    "startGame": "Start Game",
+    "minVocab": "At least 4 vocabularies required",
+    "endGame": "End Game",
+    "loading": "Loading games...",
+    "playPronunciation": "Play Pronunciation",
+    "yourAnswer": "Your Answer:",
+    "enterDefinition": "Enter the definition...",
+    "submitAnswer": "Submit Answer",
+    "correct": "Correct!",
+    "notQuite": "Not Quite",
+    "incorrect": "Incorrect",
+    "correctAnswer": "Correct Answer:",
+    "yourAnswerLabel": "Your Answer:",
+    "nextQuestion": "Next Question",
+    "gameComplete": "Game Complete!",
+    "yourScore": "Your Score:",
+    "playAgain": "Play Again",
+    "perfectScore": "Perfect score! Amazing job!",
+    "greatJob": "Great job! You really know these words!",
+    "goodWork": "Good work! Keep practicing!",
+    "niceEffort": "Nice effort! Try reviewing the words again.",
+    "keepPracticing": "Keep practicing! You'll get better with time.",
+    "noAnswer": "No answer",
+    "questionSummary": "Question Summary",
+    "question": "Question"
   }
 }

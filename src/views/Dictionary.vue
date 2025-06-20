@@ -4,21 +4,19 @@
     <div class="lookup-flex-row" style="display: flex; gap: 32px; align-items: flex-start;">
       <!-- Top Search Bar -->
       <div class="top-search-bar" style="flex: 1; min-width: 320px;">
-        <div class="function-box lookup-box">
-          <div class="box-header">
-            <h3>🔍 German Dictionary Search</h3>
-            <p>Get comprehensive word data from Digital Dictionary of German</p>
+        <div class="function-box lookup-box">          <div class="box-header">
+            <h3>{{ t('dictionary.title') }}</h3>
+            <p>{{ t('dictionary.description') }}</p>
             </div>
           </div>
           <div class="function-content">
             <div class="search-box-group">
               <div class="search-box">
-                <div class="input-wrapper" style="position:relative;" ref="inputWrapperRef">
-                  <input
+                <div class="input-wrapper" style="position:relative;" ref="inputWrapperRef">                  <input
                     type="text"
                     v-model="searchQuery"
                     id="lookupInput"
-                    placeholder="Enter a German word to search..."
+                    :placeholder="t('dictionary.placeholder')"
                     @keydown.enter="lookupWord"
                     @input="handleInput"
                     autocomplete="off"/>
@@ -27,7 +25,7 @@
                     <button type="button" @click="insertChar('ö')" class="char-btn">ö</button>
                     <button type="button" @click="insertChar('ü')" class="char-btn">ü</button>
                     <button type="button" @click="insertChar('ß')" class="char-btn">ß</button>
-                    <button type="button" @click="toggleSearchDirection" class="direction-btn" title="Toggle search direction">🔄</button>
+                    <button type="button" @click="toggleSearchDirection" class="direction-btn" :title="t('dictionary.toggleDirection') || 'Toggle search direction'">🔄</button>
                   </div>
                   <div v-if="showSuggestions" class="suggestions-container" id="suggestions">
                     <div
@@ -46,7 +44,7 @@
                     </div>
                   </div>
                 </div>
-                <button class="danger-btn" @click="lookupWord">Search Word</button>
+                <button class="danger-btn" @click="lookupWord">{{ t('dictionary.searchWord') }}</button>
               </div>
             </div>
           </div>
@@ -57,16 +55,15 @@
         <div id="lookup-results" class="results-section" style="flex: 1; min-width: 320px;">
           <div v-if="loading" class="loading-box">
             <div class="loading-spinner">⏳</div>
-            <div class="loading-message">Loading...</div>
+            <div class="loading-message">{{ t('common.loading') }}</div>
           </div>
           <div v-else-if="error" class="error-box">
             <div class="error-icon">❌</div>
             <div class="error-message">{{ error }}</div>
           </div>
-          <div v-else-if="lookupResult" class="word-info-box">
-            <div class="box-header-result">
-              Result Lookup
-              <span v-if="lookupResult.cached" class="cache-badge" title="Result from cache">⚡</span>
+          <div v-else-if="lookupResult" class="word-info-box">            <div class="box-header-result">
+              {{ t('dictionary.results') }}
+              <span v-if="lookupResult.cached" class="cache-badge" :title="t('dictionary.resultFromCache')">⚡</span>
             </div>
             <div class="word-title">
               🇩🇪 {{ lookupResult.word }}
@@ -76,7 +73,7 @@
                 v-if="lookupResult.audio_url"
                 @click="playWordAudio(lookupResult.word)"
                 class="audio-btn"
-                title="Listen to pronunciation"
+                :title="t('vocabulary.playPronunciation')"
               >🔊</button>
               <button
                 v-if="authStore.isAuthenticated"
@@ -100,25 +97,23 @@
           </div>
         </div>
         <!-- Additional Features Tabs (moved here) -->
-        <div class="additional-features">
-          <div class="function-tabs">
-            <button class="tab-btn" :class="{active: activeTab==='conjugation'}" @click="showTab('conjugation')">⚡ Conjugation</button>
-            <button class="tab-btn" :class="{active: activeTab==='examples'}" @click="showTab('examples')">💡 Examples</button>
-            <button class="tab-btn" :class="{active: activeTab==='browse'}" @click="showTab('browse')">📚 Browse</button>
+        <div class="additional-features">          <div class="function-tabs">
+            <button class="tab-btn" :class="{active: activeTab==='conjugation'}" @click="showTab('conjugation')">{{ t('dictionary.conjugation') }}</button>
+            <button class="tab-btn" :class="{active: activeTab==='examples'}" @click="showTab('examples')">{{ t('dictionary.getExamples') }}</button>
+            <button class="tab-btn" :class="{active: activeTab==='browse'}" @click="showTab('browse')">{{ t('dictionary.browse') }}</button>
           </div>
           <div class="tab-contents">
             <div v-show="activeTab==='conjugation'" class="tab-content active">
-              <div class="function-box conjugation-box">
-                <div class="box-header">
-                  <h3>⚡ Verb Conjugation</h3>
-                  <p>Get complete conjugation forms for any German verb</p>
+              <div class="function-box conjugation-box">                <div class="box-header">
+                  <h3>{{ t('dictionary.conjugationTitle') }}</h3>
+                  <p>{{ t('dictionary.conjugationDesc') }}</p>
                 </div>
                 <div class="function-content">
-                  <button class="success-btn" @click="getConjugation" :disabled="conjugationLoading">Show Conjugation</button>
-                  <div v-if="conjugationLoading" class="loading-box">Loading...</div>
+                  <button class="success-btn" @click="getConjugation" :disabled="conjugationLoading">{{ t('dictionary.conjugate') }}</button>
+                  <div v-if="conjugationLoading" class="loading-box">{{ t('common.loading') }}</div>
                   <div v-if="conjugationResult">
                     <div class="conjugation-result-box">
-                      <div class="box-header-result">Conjugation: {{ searchQuery }}</div>
+                      <div class="box-header-result">{{ t('dictionary.conjugation') }}: {{ searchQuery }}</div>
                       <div class="conjugation-grid">
                         <div v-for="(forms, tense) in conjugationResult" :key="tense" class="tense-section">
                           <div class="tense-title">{{ tense }}</div>
@@ -136,17 +131,16 @@
               </div>
             </div>
             <div class="tab-content" :style="activeTab==='examples' ? 'display:block;' : 'display:none;'">
-              <div class="function-box examples-box">
-                <div class="box-header">
-                  <h3>💡 Word Examples</h3>
-                  <p>Get practical examples and usage patterns</p>
+              <div class="function-box examples-box">                <div class="box-header">
+                  <h3>{{ t('dictionary.examplesTitle') }}</h3>
+                  <p>{{ t('dictionary.examplesDesc') }}</p>
                 </div>
                 <div class="function-content">
-                  <button class="warning-btn" @click="getExamples" :disabled="examplesLoading">Show Examples</button>
-                  <div v-if="examplesLoading" class="loading-box">Loading...</div>
+                  <button class="warning-btn" @click="getExamples" :disabled="examplesLoading">{{ t('dictionary.getExamplesBtn') }}</button>
+                  <div v-if="examplesLoading" class="loading-box">{{ t('common.loading') }}</div>
                   <div v-if="exampleResults.length">
                     <div class="examples-result-box">
-                      <div class="box-header-result">Examples: {{ searchQuery }}</div>
+                      <div class="box-header-result">{{ t('dictionary.examples') }}: {{ searchQuery }}</div>
                       <div v-for="section in exampleResults" :key="section.heading || section.german || section.sentence" class="example-section">
                         <h4 class="example-heading" v-if="section.heading">{{ section.heading }}</h4>
                         <div class="examples-list">
@@ -162,32 +156,29 @@
               </div>
             </div>
             <div v-show="activeTab==='browse'" class="tab-content">
-              <div class="function-box browse-box">
-                <div class="box-header">
-                  <h3>📚 Browse Dictionary</h3>
-                  <p>Explore words by type, difficulty, or get random selections</p>
+              <div class="function-box browse-box">                <div class="box-header">
+                  <h3>{{ t('dictionary.browseTitle') }}</h3>
+                  <p>{{ t('dictionary.browseDesc') }}</p>
                 </div>
                 <div class="function-content">
                   <div class="function-grid">
-                    <div class="function-category">
-                      <h4>Word Types</h4>
+                    <div class="function-category">                      <h4>{{ t('dictionary.wordTypes') }}</h4>
                       <div class="button-group">
-                        <button class="category-btn noun-btn" @click="browseByType('noun')">Nouns</button>
-                        <button class="category-btn verb-btn" @click="browseByType('verb')">Verbs</button>
-                        <button class="category-btn adj-btn" @click="browseByType('adjective')">Adjectives</button>
+                        <button class="category-btn noun-btn" @click="browseByType('noun')">{{ t('dictionary.nouns') }}</button>
+                        <button class="category-btn verb-btn" @click="browseByType('verb')">{{ t('dictionary.verbs') }}</button>
+                        <button class="category-btn adj-btn" @click="browseByType('adjective')">{{ t('dictionary.adjectives') }}</button>
                       </div>
                     </div>
-                    <div class="function-category">
-                      <h4>Difficulty Levels</h4>
+                    <div class="function-category">                      <h4>{{ t('dictionary.difficultyLevels') }}</h4>
                       <div class="button-group">
-                        <button class="category-btn beginner-btn" @click="browseByDifficulty('beginner')">Beginner</button>
-                        <button class="category-btn intermediate-btn" @click="browseByDifficulty('intermediate')">Intermediate</button>
-                        <button class="category-btn advanced-btn" @click="browseByDifficulty('advanced')">Advanced</button>
+                        <button class="category-btn beginner-btn" @click="browseByDifficulty('beginner')">{{ t('dictionary.beginner') }}</button>
+                        <button class="category-btn intermediate-btn" @click="browseByDifficulty('intermediate')">{{ t('dictionary.intermediate') }}</button>
+                        <button class="category-btn advanced-btn" @click="browseByDifficulty('advanced')">{{ t('dictionary.advanced') }}</button>
                       </div>
                     </div>
                   </div>
                   <div style="text-align: center; margin-top: 20px;">
-                    <button class="action-btn random-btn" @click="getRandomWords" :disabled="randomLoading">🎲 Random Words</button>
+                    <button class="action-btn random-btn" @click="getRandomWords" :disabled="randomLoading">{{ t('dictionary.randomWords') }}</button>
                   </div>
                   <div v-if="browseResults.length" class="browse-results mt-4">
                     <div v-for="word in browseResults" :key="word.id || word.german || word.word" class="word-card">
@@ -203,8 +194,7 @@
         </div>
       </div>
     </div>
-    <!-- Back to Top Button -->
-    <button id="backToTopBtn" title="Back to top" style="display:none;position:fixed;bottom:40px;right:40px;z-index:9999;padding:10px 16px;font-size:18px;border:none;border-radius:50%;background:#667eea;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:background 0.2s;" @click="scrollToTop">
+    <!-- Back to Top Button -->    <button id="backToTopBtn" :title="t('common.backToTop') || 'Back to top'" style="display:none;position:fixed;bottom:40px;right:40px;z-index:9999;padding:10px 16px;font-size:18px;border:none;border-radius:50%;background:#667eea;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:background 0.2s;" @click="scrollToTop">
       ↑
     </button>
 
