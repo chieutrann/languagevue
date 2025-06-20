@@ -528,6 +528,140 @@ def api_generate_multiple_choice(folder_id):
     return jsonify({'questions': mc_questions})
 
 
+@app.route('/api/folders/<int:folder_id>/generate-flashcards', methods=['POST'])
+@login_required
+def api_generate_flashcards(folder_id):
+    """API endpoint to generate flashcards from folder vocabularies"""
+    data = request.get_json() or {}
+    
+    try:
+        # Check if user wants all words or a specific count
+        word_count = int(data.get('word_count', 10))
+        # If word_count is 0, use all words in the folder
+        use_all_words = word_count == 0
+    except (ValueError, TypeError):
+        return jsonify({'error': 'word_count must be an integer'}), 400
+
+    # Get the target language preference
+    lang_dest = data.get('lang_dest', 'en')  # Default to English
+    src_lang = data.get('src_lang', 'de')    # Default to German
+
+    folder = Folder.query.get_or_404(folder_id)
+    
+    # Check if user owns this folder
+    if folder.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    vocabularies = list(folder.vocabularies)
+    
+    if not vocabularies:
+        return jsonify({'error': 'No vocabularies in this folder'}), 400
+
+    # Shuffle the vocabulary list
+    random.shuffle(vocabularies)
+    
+    # If word_count specified and not 0, limit the number of flashcards
+    if not use_all_words:
+        vocabularies = vocabularies[:min(word_count, len(vocabularies))]
+    
+    # Generate flashcards
+    flashcards = []
+    for vocab in vocabularies:
+        # Get or create translation for the vocabulary
+        translation = vocab.definition
+        notes = ""
+
+        # Try to get a more accurate translation if dictionary is available
+        if dictionary:
+            # Check if word exists in SearchedWord with translation
+            existing_word = SearchedWord.query.filter_by(word=vocab.word).first()
+            if existing_word:
+                saved_translation = existing_word.get_translation(lang_dest)
+                if saved_translation:
+                    translation = saved_translation
+            else:
+                # If no cached translation, try to get one from the dictionary
+                try:
+                    result = dictionary.get_word(vocab.word, src_lang=src_lang, lang_dest=lang_dest)
+                    if result and not result.get('error'):
+                        # Store the translation for future use
+                        SearchedWord.add_or_update(
+                            word=vocab.word,
+                            word_type=result.get('word_type'),
+                            translation=result.get('definition'),
+                            audio_url=vocab.audio_url,
+                            lang=lang_dest
+                        )
+                        translation = result.get('definition')
+                        if result.get('word_type'):
+                            notes = f"Type: {result.get('word_type')}"
+                except Exception as e:
+                    print(f"Error translating '{vocab.word}': {e}")
+                    # Keep the original translation on error
+
+        flashcards.append({
+            'id': vocab.id,
+            'word': vocab.word,
+            'translation': translation,
+            'audio_url': vocab.audio_url or '',
+            'image_url': vocab.image_url or '',
+            'notes': notes
+        })
+        
+    return jsonify({
+        'words': flashcards,
+        'total': len(flashcards),
+        'folder_id': folder_id,
+        'folder_name': folder.name
+    })
+
+
+@app.route('/api/folders/<int:folder_id>/flashcard-results', methods=['POST', 'OPTIONS'])
+@login_required
+def api_save_flashcard_results(folder_id):
+    """API endpoint to save flashcard session results"""
+    # Handle OPTIONS request for CORS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response
+        
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+        
+    folder = Folder.query.get_or_404(folder_id)
+    
+    # Check if user owns this folder
+    if folder.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Get results data
+    known_words = data.get('known_words', [])
+    difficult_words = data.get('difficult_words', [])
+    
+    # Here you can implement logic to store these results in a database
+    # For example, updating a user progress table or vocabulary status
+    
+    # Log the results for now
+    print(f"User {current_user.id} completed flashcards for folder {folder_id}")
+    print(f"Known words: {len(known_words)}, Difficult words: {len(difficult_words)}")
+    
+    # In a future enhancement, you could:
+    # 1. Store results in a FlashcardResult table
+    # 2. Update mastery level for each vocabulary
+    # 3. Create spaced repetition schedules based on results
+    
+    return jsonify({
+        'success': True,
+        'message': 'Flashcard results saved successfully',
+        'known_count': len(known_words),
+        'difficult_count': len(difficult_words),
+        'total': len(known_words) + len(difficult_words)
+    })
+
 
 
 def get_adobe_stock_images(word, limit=3):
@@ -792,3 +926,4 @@ if __name__ == "__main__":
         # Try an alternative port if 5000 is blocked or in use
         app.run(debug=True, host='127.0.0.1', port=5001)
     # app.run(debug=True)
+
